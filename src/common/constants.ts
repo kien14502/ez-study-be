@@ -43,3 +43,13 @@ export enum CollectionName {
   USER = 'users',
   AUTH = 'auth',
 }
+
+export enum UserRole {
+  ADMIN = 'admin',
+  TEACHER = 'teacher',
+  STUDENT = 'student',
+}
+
+export enum MongoCollection {
+  USERS = 'users',
+}

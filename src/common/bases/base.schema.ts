@@ -1,5 +1,8 @@
 import { Prop } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 export class MongoBaseSchema {
+  _id: Types.ObjectId;
+
   @Prop({ required: false, default: null, type: Date })
   createdAt: Date;
 

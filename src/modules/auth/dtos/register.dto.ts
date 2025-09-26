@@ -13,4 +13,6 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Mật khẩu là bắt buộc' })
   @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
   password: string;
+
+  role?: string;
 }
