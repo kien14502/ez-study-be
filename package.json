@@ -24,7 +24,8 @@
   "lint-staged": {
     "*.{ts,js}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "jest --findRelatedTests"
     ],
     "*.{json,md}": [
       "prettier --write"
@@ -35,14 +36,21 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.0",
     "@nestjs/mongoose": "^11.0.3",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.18",
+    "ioredis": "^5.8.0",
     "joi": "^18.0.1",
     "mongoose": "^8.18.2",
     "nestjs-pino": "^4.4.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
     "pino-http": "^10.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

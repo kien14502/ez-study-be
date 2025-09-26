@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { isValidObjectId, Types } from 'mongoose';
 
 import dayjs from '../../plugins/dayjs';
@@ -13,6 +14,10 @@ export function toObjectId(
     return new Types.ObjectId(String(value));
   }
   return fallbackValue;
+}
+
+export function hashPassword(password: string) {
+  return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 }
 
 export function convertTimeToUTC(time: string | Date) {
