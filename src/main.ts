@@ -1,11 +1,12 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
-import { Logger } from 'nestjs-pino';
+import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
+
+import { AppModule } from './app.module';
 
 const PORT = process.env.PORT ?? 5000;
-const GLOBAL_PREFIX = process.env.APP_GLOBAL_PREFIX || 'v1'
+const GLOBAL_PREFIX = process.env.APP_GLOBAL_PREFIX || 'v1';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,7 +21,7 @@ async function bootstrap() {
     .filter(Boolean);
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback) => {
       if (!origin || whitelist.includes(origin)) {
         callback(null, true);
       } else {
@@ -34,12 +35,14 @@ async function bootstrap() {
     exclude: [{ path: '/', method: RequestMethod.ALL }],
   });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true, 
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   await app.listen(PORT, '0.0.0.0', () => {
-    console.info(`🚀 Application running at port ${PORT}`)
-  })
+    console.info(`🚀 Application running at port ${PORT}`);
+  });
 }
 bootstrap();

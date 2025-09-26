@@ -1,41 +1,32 @@
-import { Injectable, PipeTransform } from '@nestjs/common'
-import isPlainObject from 'lodash/isPlainObject'
-import mapKeys from 'lodash/mapKeys'
-import trim from 'lodash/trim'
+import { Injectable, PipeTransform } from '@nestjs/common';
+import isPlainObject from 'lodash/isPlainObject';
+import trim from 'lodash/trim';
+
+type Trimable = string | number | boolean | null | undefined | Trimable[] | { [key: string]: Trimable };
 
 @Injectable()
 export class TrimBodyPipe implements PipeTransform {
-  constructor() {}
-
-  trimData(body: Record<string, any>) {
-    const trimValue = (item: any) => {
-      mapKeys(item, (value, key) => {
-        // remove string contain only space characters
-        if (typeof value === 'string') {
-          item[key] = value.trim()
-        }
-
-        // iterate array
-        else if (Array.isArray(value)) {
-          value.forEach((subValue, index) => {
-            // remove string contain only space characters
-            if (typeof subValue === 'string' && !trim(subValue as string)) {
-              value.splice(index, 1)
-            } else if (isPlainObject(subValue)) {
-              trimValue(subValue)
-            }
-          })
-        } else if (isPlainObject(value)) {
-          trimValue(value)
-        }
-      })
-    }
-
-    trimValue(body)
+  transform(body: Record<string, Trimable>) {
+    return this.trimData(body);
   }
 
-  transform(body: Record<string, any>) {
-    this.trimData(body)
-    return body
+  private trimData(obj: Record<string, Trimable>): Record<string, Trimable> {
+    for (const key in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+
+      const value = obj[key];
+
+      if (typeof value === 'string') {
+        obj[key] = trim(value) as Trimable;
+      } else if (Array.isArray(value)) {
+        obj[key] = value
+          .map((v) => (isPlainObject(v) ? this.trimData(v as Record<string, Trimable>) : v))
+          .filter((v) => !(typeof v === 'string' && !trim(v))) as Trimable;
+      } else if (isPlainObject(value)) {
+        obj[key] = this.trimData(value as Record<string, Trimable>);
+      }
+    }
+
+    return obj;
   }
 }

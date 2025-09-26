@@ -1,4 +1,4 @@
-echo "#!/bin/sh
-. \"\$(dirname \"\$0\")/_/husky.sh\"
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
 
-yarn lint-staged" > .husky/pre-commit
+yarn lint-staged
