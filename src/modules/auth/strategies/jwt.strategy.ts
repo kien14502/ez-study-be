@@ -16,13 +16,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: configService.get<string>('JWT_ACCESS_SECRET'),
     });
   }
 
   async validate(payload: JwtPayload) {
     const user = await this.userModel.findById(payload.sub);
-    if (!user) throw new UnauthorizedException('Token không hợp lệ');
-    return user;
+    if (!user || user.deletedAt !== null || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 }

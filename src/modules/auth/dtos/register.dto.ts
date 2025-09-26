@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { UserRole } from 'src/common/constants';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Email không hợp lệ' })
@@ -14,5 +15,7 @@ export class RegisterDto {
   @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
   password: string;
 
-  role?: string;
+  @IsOptional()
+  @IsEnum(UserRole, { message: 'Vai trò không hợp lệ. Phải là admin, teacher hoặc student.' })
+  role?: UserRole;
 }

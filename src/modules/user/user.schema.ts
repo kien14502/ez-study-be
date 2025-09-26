@@ -16,13 +16,20 @@ export class User extends MongoBaseSchema {
   @Prop({
     type: String,
     enum: Object.values(UserRole),
-    required: true,
+    required: false,
     default: UserRole.STUDENT,
   })
   role: UserRole;
 
-  @Prop({ default: true })
+  @Prop({ default: false })
   isActive: boolean;
+
+  @Prop({
+    type: String,
+    default: null,
+    required: false,
+  })
+  refreshToken?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
