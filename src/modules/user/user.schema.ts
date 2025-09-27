@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { MongoBaseSchema } from 'src/common/bases/base.schema';
-import { MongoCollection, UserRole } from 'src/common/constants';
+import { AuthProvider, MongoCollection, UserRole } from 'src/common/constants';
 
 @Schema({ collection: MongoCollection.USERS, timestamps: true })
 export class User extends MongoBaseSchema {
@@ -30,6 +30,15 @@ export class User extends MongoBaseSchema {
     required: false,
   })
   refreshToken?: string;
+
+  @Prop({ required: false })
+  googleId?: string;
+
+  @Prop({ required: false })
+  avatar?: string;
+
+  @Prop({ default: AuthProvider.LOCAL, enum: Object.values(AuthProvider) })
+  provider: AuthProvider;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

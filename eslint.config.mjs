@@ -46,6 +46,8 @@ export default tseslint.config(
       'no-useless-catch': 'off',
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
     },
   },
 );

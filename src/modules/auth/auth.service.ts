@@ -5,13 +5,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
-import { UserRole } from 'src/common/constants';
+import { AuthProvider, UserRole } from 'src/common/constants';
 import { RedisService } from 'src/common/services/redis.service';
 
 import { User } from '../user/user.schema';
 import { UserService } from './../user/user.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
+import { GoogleUser } from './interfaces/google.interface';
 import { AuthTokens } from './interfaces/jwt-payload.interface';
 
 @Injectable()
@@ -189,6 +190,56 @@ export class AuthService {
     } catch (error) {
       console.error(error);
       throw new HttpException('Logout failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async googleLogin(user: User): Promise<AuthTokens> {
+    try {
+      return await this.generateTokens(user);
+    } catch (error) {
+      console.error(error);
+      throw new HttpException('Failed to login with Google', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async validateGoogleUser(googleUser: GoogleUser): Promise<User> {
+    try {
+      const { googleId, email, fullName, avatar } = googleUser;
+      let user = await this.userModel.findOne({
+        googleId,
+        deletedAt: null,
+      });
+
+      if (user) {
+        return user;
+      }
+      user = await this.userModel.findOne({
+        email,
+        deletedAt: null,
+      });
+
+      if (user) {
+        user.googleId = googleId;
+        user.avatar = avatar;
+        user.provider = AuthProvider.GOOGLE;
+        user.isActive = true;
+        await user.save();
+        return user;
+      }
+      user = await this.userModel.create({
+        googleId,
+        email,
+        fullName,
+        avatar,
+        provider: 'google',
+        role: UserRole.STUDENT,
+        isActive: true,
+      });
+
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException('Failed to validate Google user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
