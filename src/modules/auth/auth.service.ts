@@ -6,7 +6,6 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
 import { AuthProvider, UserRole } from 'src/common/constants';
-import { RedisService } from 'src/common/services/redis.service';
 
 import { User } from '../user/user.schema';
 import { UserService } from './../user/user.service';
@@ -20,7 +19,6 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
-    private redisService: RedisService,
     private configService: ConfigService,
     private userService: UserService,
   ) {}
@@ -62,8 +60,6 @@ export class AuthService {
 
       const redisKey = `user-verify:${email}`;
       const TTL = 900;
-
-      await this.redisService.set(redisKey, verificationCode, TTL);
 
       return { email: user.email, fullName: user.fullName };
     } catch (error) {
