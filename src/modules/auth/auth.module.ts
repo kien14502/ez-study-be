@@ -4,7 +4,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
-import { RedisService } from 'src/common/services/redis.service';
 
 import { UserModule } from '../user/user.module';
 import { User, UserSchema } from '../user/user.schema';
@@ -39,7 +38,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     GoogleStrategy,
     UserService,
     JwtModule,
-    RedisService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

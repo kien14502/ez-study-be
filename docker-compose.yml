@@ -1,0 +1,42 @@
+services:
+  
+  db:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always 
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: ez-study
+    volumes:
+      - mongo_data:/data/db 
+    ports:
+      - "27017:27017" 
+
+  redis:
+    image: redis:latest
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+  
+  app:
+    build: .
+    container_name: node_app
+    ports:
+      - "4000:4000"
+    environment:      
+      DB_HOST: db
+      DB_PORT: 27017
+      DB_USER: user
+      DB_PASS: password
+      DB_NAME: ez-study
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  mongo_data:
+    driver: local
