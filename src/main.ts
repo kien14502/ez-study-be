@@ -1,18 +1,20 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import ConfigKey from './common/config-key';
+import { TransformInterceptor } from './common/core/tranform.interceptor';
 import { setupSwagger } from './configs/swagger.config';
 
 const PORT = process.env.PORT ?? 5000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const reflector = app.get(Reflector);
 
   app.useLogger(app.get(Logger));
 
@@ -37,7 +39,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const appGlobalPrefix = configService.get(ConfigKey.APP_GLOBAL_PREFIX) ?? '/api';
   app.setGlobalPrefix(appGlobalPrefix);
-
+  app.useGlobalInterceptors(new TransformInterceptor(reflector));
   app.use(cookieParser());
 
   app.useGlobalPipes(
