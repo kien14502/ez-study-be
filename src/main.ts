@@ -7,6 +7,7 @@ import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import ConfigKey from './common/config-key';
+import { setupSwagger } from './configs/swagger.config';
 
 const PORT = process.env.PORT ?? 5000;
 
@@ -46,6 +47,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  setupSwagger(app);
   await app.listen(PORT, '0.0.0.0', () => {
     console.info(`🚀 Application running at port ${PORT}`);
   });

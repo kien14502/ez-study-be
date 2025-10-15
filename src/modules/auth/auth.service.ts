@@ -184,7 +184,6 @@ export class AuthService {
       await this.userService.updateRefreshToken(user.email, null);
       return { message: 'Logged out successfully' };
     } catch (error) {
-      console.error(error);
       throw new HttpException('Logout failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -193,7 +192,6 @@ export class AuthService {
     try {
       return await this.generateTokens(user);
     } catch (error) {
-      console.error(error);
       throw new HttpException('Failed to login with Google', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
