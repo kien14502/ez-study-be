@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
@@ -11,10 +12,6 @@ import { RegisterDto } from './dtos/register.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 
-interface AuthenticatedRequest extends ExpressRequest {
-  user: User;
-}
-
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -22,6 +19,7 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  @ApiGlobalResponses()
   @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
@@ -60,9 +58,9 @@ export class AuthController {
   @Public()
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  async googleAuthRedirect(@Req() req: AuthenticatedRequest, @Res() res: ExpressResponse): Promise<void> {
+  async googleAuthRedirect(@Req() req: ExpressRequest, @Res() res: ExpressResponse): Promise<void> {
     try {
-      const user = req.user;
+      const user = req.user as any;
       const tokens = await this.authService.googleLogin(user);
 
       // Redirect về frontend với tokens

@@ -5,8 +5,8 @@ services:
     container_name: mongodb
     restart: always 
     environment:
-      MONGO_INITDB_ROOT_USERNAME: user
-      MONGO_INITDB_ROOT_PASSWORD: password
+      # MONGO_INITDB_ROOT_USERNAME: user
+      # MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: ez-study
     volumes:
       - mongo_data:/data/db 
@@ -28,8 +28,8 @@ services:
     environment:      
       DB_HOST: db
       DB_PORT: 27017
-      DB_USER: user
-      DB_PASS: password
+      # DB_USER: user
+      # DB_PASS: password
       DB_NAME: ez-study
       REDIS_HOST: redis
       REDIS_PORT: 6379
