@@ -5,7 +5,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
-import { AuthProvider, UserRole } from 'src/common/constants';
+
+import { AuthProvider, UserRole } from '@/common/constants';
 
 import { User } from '../user/user.schema';
 import { UserService } from './../user/user.service';
