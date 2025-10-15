@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ErrorResponseDto {
   @ApiProperty({ example: 401, description: 'HTTP Status Code' })
-  statusCode: number;
+  code: number;
 
   @ApiProperty({ example: 'Unauthorized', description: 'Error message' })
   message: string;
