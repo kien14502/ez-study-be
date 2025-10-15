@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common
 import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
+import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
@@ -20,12 +21,14 @@ export class AuthController {
   ) {}
 
   @ApiGlobalResponses()
+  @ApiDefaultOkResponse({ type: User })
   @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
+  @ApiGlobalResponses()
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto) {

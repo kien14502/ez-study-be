@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiOkResponse, ApiResponse } from '@nestjs/swagger';
 
 import { ErrorResponseDto } from '../dto/error.response.dto';
 

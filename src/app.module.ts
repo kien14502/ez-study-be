@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
@@ -15,11 +15,9 @@ import { UserModule } from './modules/user/user.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        return {
-          uri: configService.get<string>(ConfigKey.MONGO_DATABASE_CONNECTION_STRING),
-        };
-      },
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>(ConfigKey.MONGO_DATABASE_CONNECTION_STRING),
+      }),
     }),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
