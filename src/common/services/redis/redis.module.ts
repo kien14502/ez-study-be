@@ -24,7 +24,7 @@ import { RedisService } from './redis.service';
         });
 
         redisClient.on('connect', () => {
-          console.log(`[ioredis] Connected to Redis at ${host}:${port}`);
+          console.info(`[ioredis] Connected to Redis at ${host}:${port}`);
         });
 
         return redisClient;

@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ErrorResponseDto } from 'src/common/dto/error.response.dto';
+
+import { ErrorResponseDto } from '@/common/dto/error.response.dto';
 
 const config = new DocumentBuilder()
   .setTitle('EZ Study API')

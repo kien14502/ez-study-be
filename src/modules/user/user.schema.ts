@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { MongoBaseSchema } from 'src/common/bases/base.schema';
-import { AuthProvider, MongoCollection, UserRole } from 'src/common/constants';
+
+import { MongoBaseSchema } from '@/common/bases/base.schema';
+import { AuthProvider, MongoCollection, UserRole } from '@/common/constants';
 
 @Schema({ collection: MongoCollection.USERS, timestamps: true })
 export class User extends MongoBaseSchema {

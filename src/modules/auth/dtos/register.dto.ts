@@ -1,5 +1,6 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-import { UserRole } from 'src/common/constants';
+
+import { UserRole } from '@/common/constants';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Email không hợp lệ' })
