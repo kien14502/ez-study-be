@@ -1,4 +1,4 @@
-import { UserRole } from 'src/common/constants';
+import { UserRole } from '@/common/constants';
 
 export interface IUser extends Document {
   email: string;

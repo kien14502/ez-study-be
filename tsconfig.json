@@ -21,8 +21,11 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "typeRoots": ["./node_modules/@types", "./types"]
+    "typeRoots": ["./node_modules/@types", "./types"],
     // "noEmit": true
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/**/*", "test/**/*", "types/**/*"]
 }
