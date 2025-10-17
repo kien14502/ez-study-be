@@ -16,7 +16,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const reflector = app.get(Reflector);
 
-  app.useLogger(app.get(Logger));
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   app.use(helmet());
 
@@ -51,7 +52,7 @@ async function bootstrap() {
   );
   setupSwagger(app);
   await app.listen(PORT, '0.0.0.0', () => {
-    console.info(`🚀 Application running at port ${PORT}`);
+    logger.log(`🚀 Application running at port ${PORT}`);
   });
 }
 bootstrap();
