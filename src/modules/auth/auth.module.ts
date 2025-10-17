@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -7,7 +7,6 @@ import { PassportModule } from '@nestjs/passport';
 
 import { UserModule } from '../user/user.module';
 import { User, UserSchema } from '../user/user.schema';
-import { UserService } from '../user/user.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -21,7 +20,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UserModule,
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: {
@@ -36,8 +34,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthService,
     JwtStrategy,
     GoogleStrategy,
-    UserService,
-    JwtModule,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

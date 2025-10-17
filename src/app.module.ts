@@ -1,13 +1,13 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { LoggerModule } from 'nestjs-pino';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import ConfigKey from './common/config-key';
 import { RedisModule } from './common/services/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { LoggingModule } from './modules/logging/logging.module';
 import { UserModule } from './modules/user/user.module';
 
 @Module({
@@ -19,9 +19,21 @@ import { UserModule } from './modules/user/user.module';
         uri: configService.get<string>(ConfigKey.MONGO_DATABASE_CONNECTION_STRING),
       }),
     }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            singleLine: true,
+            translateTime: 'HH:MM:ss.l',
+            ignore: 'pid,hostname,context',
+          },
+        },
+      },
+    }),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
-    LoggingModule,
     UserModule,
     RedisModule,
   ],
