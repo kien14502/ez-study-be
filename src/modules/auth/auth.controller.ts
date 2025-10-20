@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApiTags } from '@nestjs/swagger';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
@@ -15,6 +16,8 @@ import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 
+@ApiTags('Auth')
+@ApiGlobalResponses()
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -22,7 +25,6 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  @ApiGlobalResponses()
   @ApiDefaultOkResponse({
     type: AuthTokensDto,
     description: 'User logged in successfully',
@@ -33,7 +35,6 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @ApiGlobalResponses()
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -60,6 +61,10 @@ export class AuthController {
     return this.authService.resendVerificationCode(email);
   }
 
+  @ApiDefaultOkResponse({
+    type: AuthTokensDto,
+    description: 'User logged in successfully',
+  })
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   async refresh(@CurrentUser() payload: { user: User; refreshToken: string }) {
