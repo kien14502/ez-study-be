@@ -26,7 +26,7 @@ export class User extends MongoBaseSchema {
   })
   role: UserRole;
 
-  @ApiProperty()
+  @ApiProperty({ type: Boolean })
   @Prop({ default: false })
   isActive: boolean;
 

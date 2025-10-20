@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, OmitType } from '@nestjs/swagger';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
@@ -76,6 +76,10 @@ export class AuthController {
     return this.authService.logout(user);
   }
 
+  @ApiDefaultOkResponse({
+    type: OmitType(User, ['password', 'googleId', 'refreshToken']),
+    description: 'User logged in successfully',
+  })
   @Get('profile')
   async getProfile(@CurrentUser() user: User) {
     return { user };
