@@ -7,42 +7,21 @@ import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import ConfigKey from './common/config-key';
-import { TransformInterceptor } from './common/core/tranform.interceptor';
+import { TransformInterceptor } from './common/core/transform.interceptor';
+import { corsConfig } from './configs/cors.config';
 import { setupSwagger } from './configs/swagger.config';
-
-const PORT = process.env.PORT ?? 5000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   const reflector = app.get(Reflector);
-
   const logger = app.get(Logger);
   app.useLogger(logger);
-
-  app.use(helmet());
-
-  const whitelist = (process.env.CORS_WHITELIST ?? '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  app.enableCors({
-    origin: (origin: string | undefined, callback) => {
-      if (!origin || whitelist.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS blocked for origin: ${origin}`));
-      }
-    },
-    credentials: true,
-  });
-
-  const configService = app.get(ConfigService);
-  const appGlobalPrefix = configService.get(ConfigKey.APP_GLOBAL_PREFIX) ?? '/api';
+  app.enableCors(corsConfig(configService));
+  const appGlobalPrefix = configService.get(ConfigKey.APP_GLOBAL_PREFIX, '/api');
   app.setGlobalPrefix(appGlobalPrefix);
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
   app.use(cookieParser());
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -50,7 +29,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.use(helmet());
   setupSwagger(app);
+  const PORT = configService.get<number>('PORT', 5000);
   await app.listen(PORT, '0.0.0.0', () => {
     logger.log(`🚀 Application running at port ${PORT}`);
   });

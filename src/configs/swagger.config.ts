@@ -17,6 +17,7 @@ const config = new DocumentBuilder()
     },
     'access-token',
   )
+  .addServer('localhost:4000')
   .build();
 
 export const setupSwagger = (app: INestApplication) => {
