@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import ConfigKey from './common/config-key';
 import { RedisModule } from './common/services/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { UserModule } from './modules/user/user.module';
 
 @Module({
@@ -36,6 +37,7 @@ import { UserModule } from './modules/user/user.module';
     AuthModule,
     UserModule,
     RedisModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
