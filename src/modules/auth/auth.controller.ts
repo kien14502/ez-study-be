@@ -1,15 +1,22 @@
 import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, OmitType } from '@nestjs/swagger';
+import { ApiHeader, ApiTags, OmitType } from '@nestjs/swagger';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
+import { MessageDto } from '@/common/dto/message.dto';
+
 import { User } from '../user/user.schema';
 import { AuthService } from './auth.service';
-import { AuthTokensDto, ResendVerificationResponseDto, VerifyEmailResponseDto } from './dtos/auth-response.dto';
+import {
+  AuthTokensDto,
+  LoginResponseDto,
+  ResendVerificationResponseDto,
+  VerifyEmailResponseDto,
+} from './dtos/auth-response.dto';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
@@ -26,13 +33,13 @@ export class AuthController {
   ) {}
 
   @ApiDefaultOkResponse({
-    type: AuthTokensDto,
+    type: LoginResponseDto,
     description: 'User logged in successfully',
   })
   @Public()
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: ExpressResponse) {
+    return this.authService.login(loginDto, res);
   }
 
   @Public()
@@ -61,6 +68,7 @@ export class AuthController {
     return this.authService.resendVerificationCode(email);
   }
 
+  @ApiHeader({ name: 'Authorization', description: 'Bearer <refresh_token>' })
   @ApiDefaultOkResponse({
     type: AuthTokensDto,
     description: 'User logged in successfully',
@@ -71,11 +79,17 @@ export class AuthController {
     return this.authService.refreshTokens(payload.user, payload.refreshToken);
   }
 
+  @ApiDefaultOkResponse({
+    type: MessageDto,
+    description: 'User logged in successfully',
+  })
+  @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @Post('logout')
-  async logout(@CurrentUser() user: User) {
-    return this.authService.logout(user);
+  async logout(@CurrentUser() user: User, @Res({ passthrough: true }) res: ExpressResponse) {
+    return this.authService.logout(user, res);
   }
 
+  @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @ApiDefaultOkResponse({
     type: OmitType(User, ['password', 'googleId', 'refreshToken']),
     description: 'User logged in successfully',

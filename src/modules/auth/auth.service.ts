@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
+import { Response } from 'express';
 import { Error, Model } from 'mongoose';
 
 import { AuthProvider, UserRole } from '@/common/constants';
@@ -27,7 +28,7 @@ export class AuthService {
     private userService: UserService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<AuthTokens> {
+  async login(loginDto: LoginDto, res: Response) {
     try {
       const { email, password } = loginDto;
 
@@ -36,8 +37,14 @@ export class AuthService {
       if (!user.isActive) {
         throw new HttpException('Account not verified. Please verify your email first.', HttpStatus.FORBIDDEN);
       }
-
-      return await this.generateTokens(user);
+      const { accessToken, refreshToken } = await this.generateTokens(user);
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: this.configService.get<string>('NODE_ENV') === 'production',
+        maxAge: this.configService.get<number>('JWT_REFRESH_TOKEN_EXPIRY_MS', 7 * 24 * 60 * 60 * 1000),
+        sameSite: 'lax',
+      });
+      return { accessToken };
     } catch (error) {
       throw error;
     }
@@ -322,9 +329,10 @@ export class AuthService {
     }
   }
 
-  async logout(user: User): Promise<{ message: string }> {
+  async logout(user: User, res: Response): Promise<{ message: string }> {
     try {
       await this.userService.updateRefreshToken(user.email, null);
+      res.clearCookie('refreshToken');
       return { message: 'Logged out successfully' };
     } catch (error) {
       this.logger.error('Error logging out', error);

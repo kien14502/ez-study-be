@@ -24,5 +24,10 @@ export const setupSwagger = (app: INestApplication) => {
   const document = SwaggerModule.createDocument(app, config, {
     extraModels: [ErrorResponseDto],
   });
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      jsonDocumentUrl: 'api-docs-json',
+    },
+  });
 };
