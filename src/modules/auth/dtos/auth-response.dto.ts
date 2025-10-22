@@ -41,3 +41,11 @@ export class ResendVerificationResponseDto {
   })
   message: string;
 }
+
+export class LoginResponseDto {
+  @ApiProperty({
+    description: 'Authentication tokens',
+    type: String,
+  })
+  accessToken: string;
+}
