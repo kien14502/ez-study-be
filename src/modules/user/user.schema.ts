@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 import { MongoBaseSchema } from 'src/common/bases/base.schema';
 import { AuthProvider, MongoCollection, UserRole } from 'src/common/constants';
 
@@ -44,11 +45,19 @@ export class User extends MongoBaseSchema {
 
   @ApiProperty()
   @Prop({ required: false })
-  avatar?: string;
+  avatarUrl?: string;
 
   @ApiProperty()
   @Prop({ default: AuthProvider.LOCAL, enum: Object.values(AuthProvider) })
   provider: AuthProvider;
+
+  @ApiProperty()
+  @Prop({ type: Date, required: false })
+  lastLoginAt?: Date;
+
+  @ApiProperty()
+  @Prop({ type: Types.ObjectId, required: false })
+  workspaceId?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -367,7 +367,7 @@ export class AuthService {
 
       if (user) {
         user.googleId = googleId;
-        user.avatar = avatar;
+        user.avatarUrl = avatar;
         user.provider = AuthProvider.GOOGLE;
         user.isActive = true;
         await user.save();
