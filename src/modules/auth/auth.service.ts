@@ -4,14 +4,14 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
-import { Error, Model } from 'mongoose';
+import { Model } from 'mongoose';
 
 import { AuthProvider, UserRole } from '@/common/constants';
 import { RedisService } from '@/common/services/redis/redis.service';
+import { UserJWTPayload } from '@/interfaces/user.interface';
 
 import { User } from '../user/user.schema';
 import { UserService } from './../user/user.service';
-import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { GoogleUser } from './interfaces/google.interface';
@@ -28,16 +28,20 @@ export class AuthService {
     private userService: UserService,
   ) {}
 
-  async login(loginDto: LoginDto, res: Response) {
+  async login(userPayload: UserJWTPayload, res: Response) {
     try {
-      const { email, password } = loginDto;
+      const { email } = userPayload;
+      console.info('🚀 ~ AuthService ~ login ~ email:', email);
 
-      const user = await this.validateUserCredentials(email, password);
+      const user = await this.userService.findOneByEmail(email);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
 
       if (!user.isActive) {
         throw new HttpException('Account not verified. Please verify your email first.', HttpStatus.FORBIDDEN);
       }
-      const { accessToken, refreshToken } = await this.generateTokens(user);
+      const { accessToken, refreshToken } = await this.userService.generateTokens(user);
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: this.configService.get<string>('NODE_ENV') === 'production',
@@ -63,7 +67,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         fullName,
-        role: role || UserRole.STUDENT,
+        role: role,
         isActive: false,
         provider: AuthProvider.LOCAL,
       });
@@ -140,7 +144,7 @@ export class AuthService {
 
       await this.redisService.del(redisKey);
 
-      const tokens = await this.generateTokens(user);
+      const tokens = await this.userService.generateTokens(user);
 
       this.logger.log(`Email verified successfully for user: ${email}`);
 
@@ -219,117 +223,16 @@ export class AuthService {
     }
   }
 
-  private async validateUserCredentials(email: string, password: string): Promise<User> {
-    const user = await this.userModel.findOne({
-      email,
-      deletedAt: null,
-    });
-
-    if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
-
-    if (user.deletedAt !== null) {
-      throw new HttpException('Account has been deactivated', HttpStatus.FORBIDDEN);
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
-
-    return user;
-  }
-
-  private async generateTokens(user: User): Promise<AuthTokens> {
+  async refreshTokens(user: User): Promise<AuthTokens> {
     try {
-      const payload = {
-        sub: user._id.toString(),
-        email: user.email,
-        role: user.role,
-      };
-
-      const accessTokenExpiry = this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRY') || '15m';
-      const refreshTokenExpiry = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRY') || '7d';
-
-      const accessTokenSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
-      const refreshTokenSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
-
-      if (!accessTokenSecret || !refreshTokenSecret) {
-        throw new HttpException('JWT secrets not configured', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-
-      // Generate access token
-      const accessToken = await this.jwtService.signAsync(
-        { ...payload, tokenType: 'access' },
-        {
-          secret: accessTokenSecret,
-          expiresIn: accessTokenExpiry,
-        },
-      );
-
-      // Generate refresh token
-      const refreshToken = await this.jwtService.signAsync(
-        { ...payload, tokenType: 'refresh' },
-        {
-          secret: refreshTokenSecret,
-          expiresIn: refreshTokenExpiry,
-        },
-      );
-
-      // Update refresh token in database
-      await this.userService.updateRefreshToken(user.email, refreshToken);
-
-      return {
-        accessToken,
-        refreshToken,
-        expiresIn: this.convertTimeToSeconds(accessTokenExpiry),
-      };
-    } catch (error) {
-      this.logger.error('Error generating tokens', error);
-      throw new HttpException('Failed to generate tokens', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private convertTimeToSeconds(expTime: string): number {
-    const numericValue = parseInt(expTime);
-    const unit = expTime.slice(-1);
-
-    let seconds = 0;
-    switch (unit) {
-      case 's':
-        seconds = numericValue;
-        break;
-      case 'm':
-        seconds = numericValue * 60;
-        break;
-      case 'h':
-        seconds = numericValue * 60 * 60;
-        break;
-      case 'd':
-        seconds = numericValue * 24 * 60 * 60;
-        break;
-      default:
-        throw new Error('Invalid time unit');
-    }
-
-    return seconds;
-  }
-
-  async refreshTokens(user: User, refreshToken: string): Promise<AuthTokens> {
-    try {
-      if (user.refreshToken !== refreshToken) {
-        throw new HttpException('Invalid refresh token', HttpStatus.UNAUTHORIZED);
-      }
-
-      return await this.generateTokens(user);
+      return await this.userService.generateTokens(user);
     } catch (error) {
       this.logger.error('Error refreshing tokens', error);
       throw new HttpException('Failed to refresh tokens', HttpStatus.UNAUTHORIZED);
     }
   }
 
-  async logout(user: User, res: Response): Promise<{ message: string }> {
+  async logout(user: UserJWTPayload, res: Response): Promise<{ message: string }> {
     try {
       await this.userService.updateRefreshToken(user.email, null);
       res.clearCookie('refreshToken');
@@ -342,7 +245,7 @@ export class AuthService {
 
   async googleLogin(user: User): Promise<AuthTokens> {
     try {
-      return await this.generateTokens(user);
+      return await this.userService.generateTokens(user);
     } catch (error) {
       this.logger.error('Error google login tokens', error);
       throw new HttpException('Failed to login with Google', HttpStatus.INTERNAL_SERVER_ERROR);

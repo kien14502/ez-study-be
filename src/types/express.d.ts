@@ -1,10 +1,10 @@
 // types/express.d.ts
-import { User } from '../modules/user/user.schema';
+import { UserJWTPayload } from 'src/interfaces/user.interface';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: UserJWTPayload;
     }
   }
 }

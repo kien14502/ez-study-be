@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   
-  db:
+  mongodb:
     image: mongo:latest
     container_name: mongodb
     restart: always 
@@ -26,15 +28,14 @@ services:
     ports:
       - "4000:4000"
     environment:      
-      DB_HOST: db
-      DB_PORT: 27017
+      DB_URI: mongodb://mongodb:27017/ez-study
       # DB_USER: user
       # DB_PASS: password
-      DB_NAME: ez-study
+      # DB_NAME: ez-study
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
-      - db
+      - mongodb
       - redis
 
 volumes:
