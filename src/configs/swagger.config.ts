@@ -17,6 +17,7 @@ const config = new DocumentBuilder()
     },
     'access-token',
   )
+  .setLicense('Doc json', 'http://localhost:4000/api-docs-json')
   .addServer('localhost:4000')
   .build();
 
@@ -28,6 +29,7 @@ export const setupSwagger = (app: INestApplication) => {
     swaggerOptions: {
       persistAuthorization: true,
       jsonDocumentUrl: 'api-docs-json',
+      useRequestParameters: true,
     },
   });
 };

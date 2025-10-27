@@ -5,8 +5,9 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Model } from 'mongoose';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
+import { UserJWTPayload } from '@/interfaces/user.interface';
+
 import { User } from '../../user/user.schema';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -20,15 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(payload: UserJWTPayload) {
     const user = await this.userModel.findById(payload.sub);
     if (!user || user.deletedAt !== null || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive');
     }
-    return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
-    };
+    return payload;
   }
 }
