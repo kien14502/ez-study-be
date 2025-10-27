@@ -16,9 +16,16 @@ import { UserModule } from './modules/user/user.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>(ConfigKey.MONGO_DATABASE_CONNECTION_STRING),
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const uri = configService.get<string>(
+          ConfigKey.MONGO_DATABASE_CONNECTION_STRING,
+          'mongodb://mongodb:27017/ez-study',
+        );
+        console.info('uri', uri);
+        return {
+          uri,
+        };
+      },
     }),
     LoggerModule.forRoot({
       pinoHttp: {

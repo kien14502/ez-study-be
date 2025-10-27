@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiHeader, ApiTags, OmitType } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
@@ -8,6 +8,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
 import { MessageDto } from '@/common/dto/message.dto';
+import { UserJWTPayload } from '@/interfaces/user.interface';
 
 import { User } from '../user/user.schema';
 import { AuthService } from './auth.service';
@@ -17,11 +18,11 @@ import {
   ResendVerificationResponseDto,
   VerifyEmailResponseDto,
 } from './dtos/auth-response.dto';
-import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @ApiTags('Auth')
 @ApiGlobalResponses()
@@ -37,9 +38,10 @@ export class AuthController {
     description: 'User logged in successfully',
   })
   @Public()
+  @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: ExpressResponse) {
-    return this.authService.login(loginDto, res);
+  async login(@Req() req, @Res({ passthrough: true }) res: ExpressResponse) {
+    return this.authService.login(req.user, res);
   }
 
   @Public()
@@ -68,15 +70,29 @@ export class AuthController {
     return this.authService.resendVerificationCode(email);
   }
 
-  @ApiHeader({ name: 'Authorization', description: 'Bearer <refresh_token>' })
+  @ApiCookieAuth('refreshToken')
   @ApiDefaultOkResponse({
     type: AuthTokensDto,
     description: 'User logged in successfully',
   })
+  @ApiOperation({
+    summary: 'Làm mới Access Token',
+    description:
+      'Yêu cầu này sử dụng Refresh Token được lưu trong Cookie HTTP-Only (tên là "refreshToken") để cấp lại một Access Token mới.',
+  })
   @UseGuards(JwtRefreshGuard)
-  @Post('refresh')
-  async refresh(@CurrentUser() payload: { user: User; refreshToken: string }) {
-    return this.authService.refreshTokens(payload.user, payload.refreshToken);
+  @Public()
+  @Get('refresh')
+  async refresh(@CurrentUser() user: User, @Res({ passthrough: true }) res: ExpressResponse) {
+    const { accessToken, refreshToken } = await this.authService.refreshTokens(user);
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
+      sameSite: 'lax',
+      maxAge: this.configService.get<number>('JWT_REFRESH_TOKEN_EXPIRY_MS', 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return { accessToken };
   }
 
   @ApiDefaultOkResponse({
@@ -85,7 +101,7 @@ export class AuthController {
   })
   @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @Post('logout')
-  async logout(@CurrentUser() user: User, @Res({ passthrough: true }) res: ExpressResponse) {
+  async logout(@CurrentUser() user: UserJWTPayload, @Res({ passthrough: true }) res: ExpressResponse) {
     return this.authService.logout(user, res);
   }
 
@@ -95,7 +111,7 @@ export class AuthController {
     description: 'User logged in successfully',
   })
   @Get('profile')
-  async getProfile(@CurrentUser() user: User) {
+  async getProfile(@CurrentUser() user: UserJWTPayload) {
     return { user };
   }
 
