@@ -10,7 +10,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { MessageDto } from '@/common/dto/message.dto';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
-import { User } from '../users/schemas/user.schema';
+import { User } from '../user/user.schema';
 import { AuthService } from './auth.service';
 import {
   AuthTokensDto,
