@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { UserController } from './user.controller';
-import { User, UserSchema } from './user.schema';
-import { UserService } from './user.service';
+import { User, UserSchema } from './schemas/user.schema';
+import { UserController } from './users.controller';
+import { UserService } from './users.service';
 
 @Module({
   imports: [
@@ -24,4 +24,4 @@ import { UserService } from './user.service';
   controllers: [UserController],
   exports: [UserService],
 })
-export class UserModule {}
+export class UsersModule {}

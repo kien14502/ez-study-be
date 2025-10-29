@@ -52,9 +52,16 @@ export enum UserRole {
 
 export enum MongoCollection {
   USERS = 'users',
+  ACCOUNTS = 'accounts',
+  WORKSPACES = 'workspaces',
 }
 
 export enum AuthProvider {
   LOCAL = 'local',
   GOOGLE = 'google',
+}
+
+export enum AccountStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
 }

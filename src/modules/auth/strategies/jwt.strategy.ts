@@ -7,7 +7,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
-import { User } from '../../user/user.schema';
+import { User } from '../../users/schemas/user.schema';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

@@ -14,7 +14,7 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { MissionsModule } from './modules/missions/missions.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 import { UploadModule } from './modules/upload/upload.module';
-import { UserModule } from './modules/user/user.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -47,7 +47,7 @@ import { UserModule } from './modules/user/user.module';
     }),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
-    UserModule,
+    UsersModule,
     RedisModule,
     UploadModule,
     SubjectsModule,
