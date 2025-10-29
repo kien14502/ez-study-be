@@ -8,8 +8,13 @@ import { AppService } from './app.service';
 import ConfigKey from './common/config-key';
 import { RedisModule } from './common/services/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ChaptersModule } from './modules/chapters/chapters.module';
+import { ExercisesModule } from './modules/exercises/exercises.module';
+import { LessonsModule } from './modules/lessons/lessons.module';
+import { MissionsModule } from './modules/missions/missions.module';
+import { SubjectsModule } from './modules/subjects/subjects.module';
 import { UploadModule } from './modules/upload/upload.module';
-import { UserModule } from './modules/user/user.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -42,9 +47,14 @@ import { UserModule } from './modules/user/user.module';
     }),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
-    UserModule,
+    UsersModule,
     RedisModule,
     UploadModule,
+    SubjectsModule,
+    MissionsModule,
+    ChaptersModule,
+    LessonsModule,
+    ExercisesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
