@@ -9,7 +9,7 @@ import { UserJWTPayload } from '@/interfaces/user.interface';
 import { convertTimeToSeconds } from '@/plugins/common';
 
 import { AuthTokens } from '../auth/interfaces/jwt-payload.interface';
-import { User } from './schemas/user.schema';
+import { User } from './user.schema';
 
 @Injectable()
 export class UserService {
@@ -55,5 +55,52 @@ export class UserService {
     }
 
     return user;
+  }
+  async generateTokens(user: User): Promise<AuthTokens> {
+    try {
+      const payload: UserJWTPayload = {
+        _id: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        sub: user._id.toString(),
+        iss: 'ez-study',
+      };
+
+      const accessTokenExpiry = this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRY', '15m');
+      const refreshTokenExpiry = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRY', '7d');
+
+      const accessTokenSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+      const refreshTokenSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+
+      if (!accessTokenSecret || !refreshTokenSecret) {
+        throw new HttpException('JWT secrets not configured', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      const accessToken = await this.jwtService.signAsync(
+        { ...payload, tokenType: 'access' },
+        {
+          secret: accessTokenSecret,
+          expiresIn: accessTokenExpiry,
+        },
+      );
+
+      const refreshToken = await this.jwtService.signAsync(
+        { ...payload, tokenType: 'refresh' },
+        {
+          secret: refreshTokenSecret,
+          expiresIn: refreshTokenExpiry,
+        },
+      );
+
+      await this.updateRefreshToken(user.email, refreshToken);
+
+      return {
+        accessToken,
+        refreshToken,
+        expiresIn: convertTimeToSeconds(accessTokenExpiry),
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

@@ -1,19 +1,14 @@
 import { Prop } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
 import { Types } from 'mongoose';
 export class MongoBaseSchema {
-  @ApiProperty({ type: String })
   _id: Types.ObjectId;
 
-  @ApiProperty()
-  @Prop({ type: Date, default: Date.now })
+  @Prop({ required: false, default: null, type: Date })
   createdAt: Date;
 
-  @ApiProperty()
-  @Prop({ type: Date, default: Date.now })
+  @Prop({ required: false, default: null, type: Date })
   updatedAt: Date;
 
-  @ApiProperty({ required: false })
-  @Prop({ type: Date, default: null })
+  @Prop({ required: false, default: null, type: Date })
   deletedAt?: Date;
 }

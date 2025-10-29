@@ -6,24 +6,22 @@ import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { Model } from 'mongoose';
 
-import { AccountStatus, AuthProvider, UserRole } from '@/common/constants';
+import { AuthProvider, UserRole } from '@/common/constants';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
-import { User } from '../users/schemas/user.schema';
-import { UserService } from '../users/users.service';
+import { User } from '../user/user.schema';
+import { UserService } from './../user/user.service';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
-import { GoogleUser } from './interfaces/google-profile.interface';
+import { GoogleUser } from './interfaces/google.interface';
 import { AuthTokens } from './interfaces/jwt-payload.interface';
-import { Account } from './schemas/account.schema';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(Account.name) private accountModel: Model<Account>,
     private redisService: RedisService,
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -35,20 +33,14 @@ export class AuthService {
       const { email } = userPayload;
       console.info('🚀 ~ AuthService ~ login ~ email:', email);
 
-      const account = await this.accountModel.findOne({ email, deletedAt: null });
-      if (!account) {
-        throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
+      const user = await this.userService.findOneByEmail(email);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
 
-      if (account.status !== AccountStatus.ACTIVE) {
+      if (!user.isActive) {
         throw new HttpException('Account not verified. Please verify your email first.', HttpStatus.FORBIDDEN);
       }
-
-      const user = await this.userModel.findOne({ accountId: account._id, deletedAt: null });
-      if (!user) {
-        throw new HttpException('User profile not found', HttpStatus.NOT_FOUND);
-      }
-
       const { accessToken, refreshToken } = await this.userService.generateTokens(user);
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
@@ -278,7 +270,7 @@ export class AuthService {
 
       if (user) {
         user.googleId = googleId;
-        user.avatarUrl = avatar;
+        user.avatar = avatar;
         user.provider = AuthProvider.GOOGLE;
         user.isActive = true;
         await user.save();
