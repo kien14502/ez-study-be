@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
@@ -10,7 +10,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { MessageDto } from '@/common/dto/message.dto';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
-import { User } from '../user/user.schema';
+import { User } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import {
   AuthTokensDto,
@@ -28,6 +28,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 @ApiGlobalResponses()
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -107,7 +108,7 @@ export class AuthController {
 
   @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @ApiDefaultOkResponse({
-    type: OmitType(User, ['password', 'googleId', 'refreshToken']),
+    type: OmitType(User, ['workspaceId', 'accountId']),
     description: 'User logged in successfully',
   })
   @Get('profile')
@@ -120,6 +121,7 @@ export class AuthController {
   @UseGuards(GoogleOAuthGuard)
   async googleAuth() {
     // The req object is passed automatically by the GoogleOAuthGuard
+    this.logger.log('Google OAuth initiated');
   }
 
   @Public()
@@ -136,7 +138,7 @@ export class AuthController {
 
       res.redirect(redirectUrl);
     } catch (error) {
-      console.error(error);
+      this.logger.error('Google OAuth callback error', error.stack);
       const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
       res.redirect(`${frontendUrl}/auth/error`);
     }

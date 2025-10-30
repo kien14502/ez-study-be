@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 
 import { AuthService } from '../auth.service';
-import { GoogleProfile } from '../interfaces/google.interface';
+import { GoogleProfile } from '../interfaces/google-profile.interface';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {

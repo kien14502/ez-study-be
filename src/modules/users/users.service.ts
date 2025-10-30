@@ -1,66 +1,69 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
-import * as bcrypt from 'bcrypt';
 import { Model } from 'mongoose';
 
 import { UserJWTPayload } from '@/interfaces/user.interface';
 import { convertTimeToSeconds } from '@/plugins/common';
 
 import { AuthTokens } from '../auth/interfaces/jwt-payload.interface';
-import { User } from './user.schema';
+import { Account } from '../auth/schemas/account.schema';
+import { User } from './schemas/user.schema';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Account.name) private accountModel: Model<Account>,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
 
-  async checkHashPassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-  }
-
-  async updateRefreshToken(email: string, refresh_token: string | null): Promise<void> {
+  async updateRefreshToken(accountId: string, refreshToken: string | null): Promise<void> {
     try {
-      await this.userModel.updateOne({ email }, { refreshToken: refresh_token });
+      await this.accountModel.updateOne({ _id: accountId }, { refreshToken });
     } catch (error) {
-      throw error;
+      this.logger.error('Error updating refresh token', error);
+      throw new HttpException('Failed to update refresh token', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email }).exec();
+    const account = await this.accountModel.findOne({ email, deletedAt: null }).exec();
+    if (!account) return null;
+
+    return this.userModel.findOne({ accountId: account._id, deletedAt: null }).exec();
   }
 
-  async validateUserCredentials(email: string, password: string): Promise<User> {
-    const user = await this.userModel.findOne({
-      email,
-      deletedAt: null,
-    });
+  async findUserWithAccount(accountId: string): Promise<{ user: User; account: Account } | null> {
+    const account = await this.accountModel.findOne({ _id: accountId, deletedAt: null }).exec();
+    if (!account) return null;
 
-    if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
+    const user = await this.userModel.findOne({ accountId: account._id, deletedAt: null }).exec();
+    if (!user) return null;
 
-    if (user.deletedAt !== null) {
-      throw new HttpException('Account has been deactivated', HttpStatus.FORBIDDEN);
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
-
-    return user;
+    return { user, account };
   }
+
   async generateTokens(user: User): Promise<AuthTokens> {
     try {
+      // Get account email
+      const account = await this.accountModel
+        .findOne({
+          _id: user.accountId,
+          deletedAt: null,
+        })
+        .exec();
+
+      if (!account) {
+        throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
+      }
+
       const payload: UserJWTPayload = {
         _id: user._id.toString(),
-        email: user.email,
+        email: account.email,
         role: user.role,
         sub: user._id.toString(),
         iss: 'ez-study',
@@ -92,7 +95,8 @@ export class UserService {
         },
       );
 
-      await this.updateRefreshToken(user.email, refreshToken);
+      // Update refresh token
+      await this.updateRefreshToken(account._id.toString(), refreshToken);
 
       return {
         accessToken,
@@ -100,7 +104,10 @@ export class UserService {
         expiresIn: convertTimeToSeconds(accessTokenExpiry),
       };
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Failed to generate tokens', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

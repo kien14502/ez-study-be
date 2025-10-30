@@ -3,13 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { UserController } from './user.controller';
-import { User, UserSchema } from './user.schema';
-import { UserService } from './user.service';
+import { Account, AccountSchema } from '../auth/schemas/account.schema';
+import { User, UserSchema } from './schemas/user.schema';
+import { UserController } from './users.controller';
+import { UserService } from './users.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
@@ -24,4 +26,4 @@ import { UserService } from './user.service';
   controllers: [UserController],
   exports: [UserService],
 })
-export class UserModule {}
+export class UsersModule {}

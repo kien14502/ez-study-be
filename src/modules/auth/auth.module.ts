@@ -5,21 +5,22 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 
-import { UserModule } from '../user/user.module';
-import { User, UserSchema } from '../user/user.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
+import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { Account, AccountSchema } from './schemas/account.schema';
 import { GoogleStrategy } from './strategies/google.strategy';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    UserModule,
+    MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
+    UsersModule,
     PassportModule,
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
@@ -36,7 +37,6 @@ import { LocalStrategy } from './strategies/local.strategy';
     LocalStrategy,
     JwtRefreshStrategy,
     AuthService,
-    JwtStrategy,
     GoogleStrategy,
     {
       provide: APP_GUARD,
