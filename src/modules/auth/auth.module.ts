@@ -5,6 +5,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 
+import { MailService } from '@/common/services/mail/mail.service';
+
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
@@ -37,6 +39,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     LocalStrategy,
     JwtRefreshStrategy,
     AuthService,
+    MailService,
     GoogleStrategy,
     {
       provide: APP_GUARD,
