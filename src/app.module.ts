@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
@@ -18,15 +18,17 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
+        const logger = new Logger('MongooseModule');
         const uri = configService.get<string>(
           ConfigKey.MONGO_DATABASE_CONNECTION_STRING,
           'mongodb://mongodb:27017/ez-study',
         );
-        console.info('uri', uri);
+        logger.log('uri', uri);
         return {
           uri,
         };
@@ -45,7 +47,6 @@ import { UsersModule } from './modules/users/users.module';
         },
       },
     }),
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
     UsersModule,
     RedisModule,

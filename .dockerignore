@@ -1,0 +1,8 @@
+.git
+node_modules
+dist
+.husky
+.dockerignore
+README.md
+.env
+.env.example

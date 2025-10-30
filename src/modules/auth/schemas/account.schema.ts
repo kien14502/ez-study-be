@@ -19,7 +19,7 @@ export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'Mật khẩu đã hash (null nếu dùng OAuth)' })
   @Prop({
     required: false,
-    select: false, // Không trả về password khi query
+    select: false,
   })
   password?: string;
 
@@ -39,7 +39,7 @@ export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'JWT refresh token' })
   @Prop({
     required: false,
-    select: false, // Không trả về refreshToken khi query
+    select: false,
   })
   refreshToken?: string;
 
@@ -60,7 +60,7 @@ export class Account extends MongoBaseSchema {
   @Prop({
     required: false,
     unique: true,
-    sparse: true, // Cho phép multiple null values
+    sparse: true,
     index: true,
   })
   googleId?: string;
