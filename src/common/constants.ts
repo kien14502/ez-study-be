@@ -3,6 +3,13 @@ export enum OrderDirection {
   DESC = 'desc',
 }
 
+export enum OrderBy {
+  ID = '_id',
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+}
+
+export const DEFAULT_PORT = 3000;
 export const DEFAULT_FIRST_PAGE = 1;
 export const DEFAULT_ORDER_BY = 'createdAt';
 export const DEFAULT_ORDER_DIRECTION = 'desc';
@@ -65,4 +72,10 @@ export enum AuthProvider {
 export enum AccountStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
+}
+
+export enum NodeEnv {
+  DEVELOPMENT = 'development',
+  TEST = 'test',
+  PRODUCTION = 'production',
 }

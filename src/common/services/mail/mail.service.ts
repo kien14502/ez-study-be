@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable simple-import-sort/imports */
 
+import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -32,24 +33,20 @@ export class MailService {
     this.fromName = this.configService.get<string>('MAIL_FROM_NAME', 'EZ Study');
   }
 
+  @WithTryCatch('Error sending email')
   async sendMail(options: SendMailOptions): Promise<boolean> {
-    try {
-      const { to, subject, template, context, attachments } = options;
+    const { to, subject, template, context, attachments } = options;
 
-      await this.mailerService.sendMail({
-        to,
-        from: `${this.fromName} <${this.fromEmail}>`,
-        subject,
-        template,
-        context,
-        attachments,
-      });
+    await this.mailerService.sendMail({
+      to,
+      from: `${this.fromName} <${this.fromEmail}>`,
+      subject,
+      template,
+      context,
+      attachments,
+    });
 
-      this.logger.log(`Email sent successfully to: ${to}`);
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to send email: ${error.message}`, error.stack);
-      return false;
-    }
+    this.logger.log(`Email sent successfully to: ${to}`);
+    return true;
   }
 }
