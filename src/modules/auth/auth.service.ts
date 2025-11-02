@@ -39,8 +39,6 @@ export class AuthService {
       if (account.status !== AccountStatus.ACTIVE) {
         throw new HttpException('Account not verified. Please verify your email first.', HttpStatus.FORBIDDEN);
       }
-      account.lastLoginAt = new Date();
-      await account.save();
       const payload: UserJWTPayload = {
         _id: account._id.toString(),
         email: account.email,
@@ -49,6 +47,9 @@ export class AuthService {
       };
 
       const { accessToken, refreshToken } = await this.accountService.generateTokens(payload);
+
+      await this.accountService.updateLastLoginAt(account._id.toString(), new Date());
+
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: this.configService.get<string>('NODE_ENV') === 'production',
@@ -100,16 +101,16 @@ export class AuthService {
       this.logger.log(`Verification link for ${email}: ${verifyUrl}`);
 
       // TODO: Send verification email here
-      await this.mailService.sendMail({
-        to: email,
-        subject: 'Email Verification',
-        template: 'verification',
-        context: {
-          verifyUrl,
-          year: new Date().getFullYear(),
-        },
-        attachments: [],
-      });
+      // await this.mailService.sendMail({
+      //   to: email,
+      //   subject: 'Email Verification',
+      //   template: 'verification',
+      //   context: {
+      //     verifyUrl,
+      //     year: new Date().getFullYear(),
+      //   },
+      //   attachments: [],
+      // });
 
       return {
         message: 'Registration successful. Please check your email to verify your account.',
@@ -150,8 +151,7 @@ export class AuthService {
         throw new HttpException('Invalid or expired verification token', HttpStatus.BAD_REQUEST);
       }
 
-      account.status = AccountStatus.ACTIVE;
-      await account.save();
+      await this.accountService.updateVerifiedStatus(accountId, AccountStatus.ACTIVE);
 
       await this.redisService.del(redisKey);
 
@@ -267,23 +267,23 @@ export class AuthService {
     fullName: string;
     role: string;
   }> {
-    const account = await this.accountService.findOneByEmail(email);
+    const account = await this.accountService.findOneByEmailForAuth(email);
 
     if (!account) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Account not found', HttpStatus.UNAUTHORIZED);
     }
 
     if (account.status !== AccountStatus.ACTIVE) {
-      throw new HttpException('Account not verified', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Account is not active.', HttpStatus.FORBIDDEN);
     }
 
     if (!account.password) {
-      throw new HttpException('Please login with Google', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Please login with Google', HttpStatus.BAD_REQUEST);
     }
 
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
     }
 
     const user = await this.userService.findOne({
@@ -291,7 +291,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('User profile not found', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     return {
@@ -306,15 +306,9 @@ export class AuthService {
     try {
       const accountIdObject = new Types.ObjectId(user._id);
       const currentUser = await this.userService.findOne({ accountId: accountIdObject });
-      // const rs = await currentUser?.populate([
-      //   {
-      //     path: 'accountId',
-      //   },
-      // ]);
-      console.info('🚀 ~ AuthService ~ getProfileUser ~ currentUser:', currentUser);
       return currentUser;
     } catch (error) {
-      console.info('🚀 ~ AuthService ~ getProfileUser ~ error:', error);
+      this.logger.error('Error logging out', error);
       throw error;
     }
   }

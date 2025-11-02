@@ -2,10 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Types } from 'mongoose';
 
-import { MongoBaseSchema } from '@/common/bases/base.schema';
+import { baseSchemaOptions, MongoBaseSchema } from '@/common/bases/base.schema';
 import { MongoCollection, UserRole } from '@/common/constants';
 
-@Schema({ collection: MongoCollection.USERS, timestamps: true })
+@Schema({
+  collection: MongoCollection.USERS,
+  ...baseSchemaOptions,
+})
 export class User extends MongoBaseSchema {
   @ApiProperty({ description: 'Reference to Account', type: String })
   @Prop({
