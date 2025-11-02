@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
 import type { Response as ExpressResponse } from 'express';
@@ -113,12 +113,8 @@ export class AuthController {
   })
   @Get('profile')
   async getProfile(@CurrentUser() payload: UserJWTPayload) {
-    try {
-      const user = await this.authService.getProfileUser(payload);
-      return user;
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
+    const user = await this.authService.getProfileUser(payload);
+    return user;
   }
 
   @Public()
@@ -134,7 +130,6 @@ export class AuthController {
   // @Get('google/callback')
   // @UseGuards(GoogleOAuthGuard)
   // async googleAuthRedirect(@Req() req: ExpressRequest, @Res() res: ExpressResponse): Promise<void> {
-  //   try {
   //     const user = req.user as User;
   //     const tokens = await this.authService.googleLogin(user);
 
@@ -143,10 +138,5 @@ export class AuthController {
   //     const redirectUrl = `${frontendUrl}/auth/callback?token=${tokens.accessToken}&refresh=${tokens.refreshToken}`;
 
   //     res.redirect(redirectUrl);
-  //   } catch (error) {
-  //     this.logger.error('Google OAuth callback error', error.stack);
-  //     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-  //     res.redirect(`${frontendUrl}/auth/error`);
-  //   }
   // }
 }
