@@ -6,6 +6,7 @@ import { Response } from 'express';
 import { Types } from 'mongoose';
 
 import { AccountStatus } from '@/common/constants';
+import { MailService } from '@/common/services/mail/mail.service';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
@@ -24,6 +25,7 @@ export class AuthService {
     private configService: ConfigService,
     private userService: UserService,
     private accountService: AccountsService,
+    private readonly mailService: MailService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {
@@ -98,6 +100,16 @@ export class AuthService {
       this.logger.log(`Verification link for ${email}: ${verifyUrl}`);
 
       // TODO: Send verification email here
+      await this.mailService.sendMail({
+        to: email,
+        subject: 'Email Verification',
+        template: 'verification',
+        context: {
+          verifyUrl,
+          year: new Date().getFullYear(),
+        },
+        attachments: [],
+      });
 
       return {
         message: 'Registration successful. Please check your email to verify your account.',
