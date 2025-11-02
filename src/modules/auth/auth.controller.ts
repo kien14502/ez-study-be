@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import type { Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -84,7 +84,7 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   @Public()
   @Get('refresh')
-  async refresh(@CurrentUser() user: User, @Res({ passthrough: true }) res: ExpressResponse) {
+  async refresh(@CurrentUser() user: UserJWTPayload, @Res({ passthrough: true }) res: ExpressResponse) {
     const { accessToken, refreshToken } = await this.authService.refreshTokens(user);
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -112,8 +112,13 @@ export class AuthController {
     description: 'User logged in successfully',
   })
   @Get('profile')
-  async getProfile(@CurrentUser() user: UserJWTPayload) {
-    return { user };
+  async getProfile(@CurrentUser() payload: UserJWTPayload) {
+    try {
+      const user = await this.authService.getProfileUser(payload);
+      return user;
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
 
   @Public()
@@ -124,23 +129,24 @@ export class AuthController {
     this.logger.log('Google OAuth initiated');
   }
 
-  @Public()
-  @Get('google/callback')
-  @UseGuards(GoogleOAuthGuard)
-  async googleAuthRedirect(@Req() req: ExpressRequest, @Res() res: ExpressResponse): Promise<void> {
-    try {
-      const user = req.user as User;
-      const tokens = await this.authService.googleLogin(user);
+  // TO DO
+  // @Public()
+  // @Get('google/callback')
+  // @UseGuards(GoogleOAuthGuard)
+  // async googleAuthRedirect(@Req() req: ExpressRequest, @Res() res: ExpressResponse): Promise<void> {
+  //   try {
+  //     const user = req.user as User;
+  //     const tokens = await this.authService.googleLogin(user);
 
-      // Redirect về frontend với tokens
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-      const redirectUrl = `${frontendUrl}/auth/callback?token=${tokens.accessToken}&refresh=${tokens.refreshToken}`;
+  //     // Redirect về frontend với tokens
+  //     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+  //     const redirectUrl = `${frontendUrl}/auth/callback?token=${tokens.accessToken}&refresh=${tokens.refreshToken}`;
 
-      res.redirect(redirectUrl);
-    } catch (error) {
-      this.logger.error('Google OAuth callback error', error.stack);
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-      res.redirect(`${frontendUrl}/auth/error`);
-    }
-  }
+  //     res.redirect(redirectUrl);
+  //   } catch (error) {
+  //     this.logger.error('Google OAuth callback error', error.stack);
+  //     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+  //     res.redirect(`${frontendUrl}/auth/error`);
+  //   }
+  // }
 }

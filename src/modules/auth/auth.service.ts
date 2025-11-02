@@ -1,41 +1,35 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 
-import { AccountStatus, AuthProvider, UserRole } from '@/common/constants';
+import { AccountStatus } from '@/common/constants';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
-import { User } from '../users/schemas/user.schema';
+import { AccountsService } from '../accounts/accounts.service';
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
-import { GoogleUser } from './interfaces/google-profile.interface';
 import { AuthTokens } from './interfaces/jwt-payload.interface';
-import { Account } from './schemas/account.schema';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(Account.name) private accountModel: Model<Account>,
     private redisService: RedisService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private userService: UserService,
+    private accountService: AccountsService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {
     try {
       const { email } = userPayload;
-      this.logger.log(`🚀 ~ AuthService ~ login ~ email: ${email}`);
-
-      const account = await this.accountModel.findOne({ email, deletedAt: null });
+      const account = await this.accountService.findOneByEmail(email);
       if (!account) {
         throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
       }
@@ -43,17 +37,16 @@ export class AuthService {
       if (account.status !== AccountStatus.ACTIVE) {
         throw new HttpException('Account not verified. Please verify your email first.', HttpStatus.FORBIDDEN);
       }
-
-      const user = await this.userModel.findOne({ accountId: account._id, deletedAt: null });
-      if (!user) {
-        throw new HttpException('User profile not found', HttpStatus.NOT_FOUND);
-      }
-
-      // Update last login
       account.lastLoginAt = new Date();
       await account.save();
+      const payload: UserJWTPayload = {
+        _id: account._id.toString(),
+        email: account.email,
+        iss: 'ez-study',
+        sub: account._id.toString(),
+      };
 
-      const { accessToken, refreshToken } = await this.userService.generateTokens(user);
+      const { accessToken, refreshToken } = await this.accountService.generateTokens(payload);
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: this.configService.get<string>('NODE_ENV') === 'production',
@@ -68,9 +61,9 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     try {
-      const { email, password, fullName, role } = registerDto;
+      const { email, password, fullName } = registerDto;
 
-      const existingAccount = await this.accountModel.findOne({ email, deletedAt: null });
+      const existingAccount = await this.accountService.findOneByEmail(email);
       if (existingAccount) {
         throw new HttpException('Email already registered', HttpStatus.BAD_REQUEST);
       }
@@ -78,19 +71,10 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Step 1: Create Account
-      const account = await this.accountModel.create({
-        email,
-        password: hashedPassword,
-        provider: AuthProvider.LOCAL,
-        status: AccountStatus.INACTIVE,
-      });
+      const account = await this.accountService.createAccount(email, hashedPassword);
 
       // Step 2: Create User
-      await this.userModel.create({
-        accountId: account._id,
-        fullName,
-        role: role || UserRole.STUDENT,
-      });
+      await this.userService.createUserProfile({ accountId: account._id, fullName });
 
       // Step 3: Generate verification token
       const verificationToken = this.jwtService.sign(
@@ -137,11 +121,7 @@ export class AuthService {
         throw new HttpException('Invalid token type', HttpStatus.BAD_REQUEST);
       }
 
-      const account = await this.accountModel.findOne({
-        _id: accountId,
-        email,
-        deletedAt: null,
-      });
+      const account = await this.accountService.findOneById(accountId);
 
       if (!account) {
         throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
@@ -151,7 +131,6 @@ export class AuthService {
         throw new HttpException('Account already verified', HttpStatus.BAD_REQUEST);
       }
 
-      // Verify token in Redis
       const redisKey = `verify-token:${accountId}`;
       const storedToken = await this.redisService.get(redisKey);
 
@@ -159,11 +138,9 @@ export class AuthService {
         throw new HttpException('Invalid or expired verification token', HttpStatus.BAD_REQUEST);
       }
 
-      // Activate account
       account.status = AccountStatus.ACTIVE;
       await account.save();
 
-      // Clean up Redis
       await this.redisService.del(redisKey);
 
       this.logger.log(`Email verified successfully for: ${email}`);
@@ -186,7 +163,7 @@ export class AuthService {
 
   async resendVerificationCode(email: string): Promise<{ message: string }> {
     try {
-      const account = await this.accountModel.findOne({ email, deletedAt: null });
+      const account = await this.accountService.findOneByEmail(email);
 
       if (!account) {
         throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
@@ -229,7 +206,7 @@ export class AuthService {
       // Set rate limit (5 minutes)
       await this.redisService.set(rateLimitKey, Date.now().toString(), 300);
 
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
       const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
       this.logger.log(`New verification link sent to ${email}: ${verifyUrl}`);
@@ -244,24 +221,21 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(user: User): Promise<AuthTokens> {
+  async refreshTokens(user: UserJWTPayload): Promise<AuthTokens> {
     try {
-      return await this.userService.generateTokens(user);
+      return await this.accountService.generateTokens(user);
     } catch (error) {
       this.logger.error('Error refreshing tokens', error);
-      throw new HttpException('Failed to refresh tokens', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Failed to refresh token', HttpStatus.UNAUTHORIZED);
     }
   }
 
   async logout(user: UserJWTPayload, res: Response): Promise<{ message: string }> {
     try {
-      const account = await this.accountModel.findOne({
-        email: user.email,
-        deletedAt: null,
-      });
+      const account = await this.accountService.findOneByEmail(user.email);
 
       if (account) {
-        await this.userService.updateRefreshToken(account._id.toString(), null);
+        await this.accountService.updateRefreshToken(account._id.toString(), '');
       }
 
       res.clearCookie('refreshToken');
@@ -269,96 +243,6 @@ export class AuthService {
     } catch (error) {
       this.logger.error('Error logging out', error);
       throw new HttpException('Logout failed', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async googleLogin(user: User): Promise<AuthTokens> {
-    try {
-      const account = await this.accountModel.findOne({
-        _id: user.accountId,
-        deletedAt: null,
-      });
-
-      if (account) {
-        account.lastLoginAt = new Date();
-        await account.save();
-      }
-
-      return await this.userService.generateTokens(user);
-    } catch (error) {
-      this.logger.error('Error google login tokens', error);
-      throw new HttpException('Failed to login with Google', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async validateGoogleUser(googleUser: GoogleUser): Promise<User> {
-    try {
-      const { googleId, email, fullName, avatar } = googleUser;
-
-      // Check if account exists with googleId
-      let account = await this.accountModel.findOne({
-        googleId,
-        deletedAt: null,
-      });
-
-      if (account) {
-        const user = await this.userModel.findOne({
-          accountId: account._id,
-          deletedAt: null,
-        });
-
-        if (user) {
-          return user;
-        }
-      }
-
-      // Check if account exists with email
-      account = await this.accountModel.findOne({
-        email,
-        deletedAt: null,
-      });
-
-      if (account) {
-        // Link Google account to existing account
-        account.googleId = googleId;
-        account.provider = AuthProvider.GOOGLE;
-        account.status = AccountStatus.ACTIVE;
-        await account.save();
-
-        const user = await this.userModel.findOne({
-          accountId: account._id,
-          deletedAt: null,
-        });
-
-        if (user) {
-          // Update avatar if needed
-          if (avatar && !user.avatarUrl) {
-            user.avatarUrl = avatar;
-            await user.save();
-          }
-          return user;
-        }
-      }
-
-      // Create new account and user
-      const newAccount = await this.accountModel.create({
-        email,
-        googleId,
-        provider: AuthProvider.GOOGLE,
-        status: AccountStatus.ACTIVE,
-      });
-
-      const newUser = await this.userModel.create({
-        accountId: newAccount._id,
-        fullName,
-        avatarUrl: avatar,
-        role: UserRole.STUDENT,
-      });
-
-      return newUser;
-    } catch (error) {
-      this.logger.error('Google user validation error', error);
-      throw new HttpException('Failed to validate Google user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -371,12 +255,7 @@ export class AuthService {
     fullName: string;
     role: string;
   }> {
-    const account = await this.accountModel
-      .findOne({
-        email,
-        deletedAt: null,
-      })
-      .select('+password');
+    const account = await this.accountService.findOneByEmail(email);
 
     if (!account) {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
@@ -395,9 +274,8 @@ export class AuthService {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
 
-    const user = await this.userModel.findOne({
+    const user = await this.userService.findOne({
       accountId: account._id,
-      deletedAt: null,
     });
 
     if (!user) {
@@ -410,5 +288,22 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role,
     };
+  }
+
+  async getProfileUser(user: UserJWTPayload) {
+    try {
+      const accountIdObject = new Types.ObjectId(user._id);
+      const currentUser = await this.userService.findOne({ accountId: accountIdObject });
+      // const rs = await currentUser?.populate([
+      //   {
+      //     path: 'accountId',
+      //   },
+      // ]);
+      console.info('🚀 ~ AuthService ~ getProfileUser ~ currentUser:', currentUser);
+      return currentUser;
+    } catch (error) {
+      console.info('🚀 ~ AuthService ~ getProfileUser ~ error:', error);
+      throw error;
+    }
   }
 }

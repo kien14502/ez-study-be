@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import ConfigKey from './common/config-key';
 import { RedisModule } from './common/services/redis/redis.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
@@ -56,6 +57,7 @@ import { UsersModule } from './modules/users/users.module';
     ChaptersModule,
     LessonsModule,
     ExercisesModule,
+    AccountsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

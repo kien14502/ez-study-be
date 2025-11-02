@@ -5,28 +5,31 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 
+import { AccountsService } from '../accounts/accounts.service';
+import { Account, AccountSchema } from '../accounts/schemas/account.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { UsersModule } from '../users/users.module';
+import { UserService } from '../users/users.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { Account, AccountSchema } from './schemas/account.schema';
-import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
+// import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
-    UsersModule,
-    PassportModule,
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Account.name, schema: AccountSchema },
+    ]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_ACCESS_TOKEN_EXPIRY') || '15m',
+          expiresIn: configService.get<string>('JWT_ACCESS_TOKEN_EXPIRY', '15m'),
         },
       }),
       inject: [ConfigService],
@@ -34,10 +37,13 @@ import { LocalStrategy } from './strategies/local.strategy';
   ],
   controllers: [AuthController],
   providers: [
+    UserService,
+    AccountsService,
     LocalStrategy,
     JwtRefreshStrategy,
     AuthService,
-    GoogleStrategy,
+    // GoogleStrategy,
+    JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

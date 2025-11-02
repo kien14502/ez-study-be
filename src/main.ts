@@ -31,7 +31,7 @@ async function bootstrap() {
   );
   app.use(helmet());
   setupSwagger(app);
-  const PORT = configService.get<number>('PORT', 5000);
+  const PORT = configService.get<number>('PORT', 4000);
   await app.listen(PORT, '0.0.0.0', () => {
     logger.log(`🚀 Application running at port ${PORT}`);
   });
