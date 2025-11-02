@@ -19,7 +19,6 @@ export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'Mật khẩu đã hash (null nếu dùng OAuth)' })
   @Prop({
     required: false,
-    select: false,
   })
   password?: string;
 

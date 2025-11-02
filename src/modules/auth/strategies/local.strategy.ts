@@ -18,11 +18,9 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
   async validate(username: string, password: string): Promise<UserJWTPayload> {
     const user = await this.authService.validateUserCredentials(username, password);
-
     return {
       _id: user._id.toString(),
       email: user.email,
-      role: user.role,
       sub: user._id.toString(),
       iss: 'ez-study',
     };

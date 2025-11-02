@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-
-import { UserRole } from '@/common/constants';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty()
@@ -19,9 +17,4 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Mật khẩu là bắt buộc' })
   @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
   password: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsEnum(UserRole, { message: 'Vai trò không hợp lệ. Phải là admin, teacher hoặc student.' })
-  role?: UserRole;
 }
