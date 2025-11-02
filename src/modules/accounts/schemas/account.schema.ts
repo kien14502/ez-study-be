@@ -1,10 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 
-import { MongoBaseSchema } from '@/common/bases/base.schema';
+import { baseSchemaOptions, MongoBaseSchema } from '@/common/bases/base.schema';
 import { AccountStatus, AuthProvider, MongoCollection } from '@/common/constants';
 
-@Schema({ collection: MongoCollection.ACCOUNTS, timestamps: true })
+@Schema({
+  collection: MongoCollection.ACCOUNTS,
+  ...baseSchemaOptions,
+})
 export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'Email của tài khoản', example: 'user@example.com' })
   @Prop({
@@ -19,6 +22,7 @@ export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'Mật khẩu đã hash (null nếu dùng OAuth)' })
   @Prop({
     required: false,
+    select: false,
   })
   password?: string;
 

@@ -33,7 +33,7 @@ export class UserService {
 
   async findOne(payload: Partial<User>) {
     try {
-      const user = await this.userModel.findOne(payload);
+      const user = await this.userModel.findOne(payload).lean().exec();
       return user;
     } catch (error) {
       if (error instanceof Error) {

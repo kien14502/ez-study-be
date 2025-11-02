@@ -6,6 +6,7 @@ export enum OrderDirection {
 export const DEFAULT_FIRST_PAGE = 1;
 export const DEFAULT_ORDER_BY = 'createdAt';
 export const DEFAULT_ORDER_DIRECTION = 'desc';
+export const DEFAULT_LANGUAGE = 'en';
 
 export const DEFAULT_SUCCESS_MESSAGE = 'success';
 

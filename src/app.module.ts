@@ -5,12 +5,12 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
-
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import ConfigKey from './common/config-key';
 import { MailModule } from './common/services/mail/mail.module';
 import { RedisModule } from './common/services/redis/redis.module';
+import { I18nModule } from './i18n/i18n.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
@@ -89,6 +89,7 @@ import { UsersModule } from './modules/users/users.module';
       },
       inject: [ConfigService],
     }),
+    I18nModule,
     MailModule,
     AuthModule,
     UsersModule,

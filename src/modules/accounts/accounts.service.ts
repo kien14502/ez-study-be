@@ -1,9 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { AccountStatus } from '@/common/constants';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 import { convertTimeToSeconds } from '@/plugins/common';
 
@@ -33,7 +34,7 @@ export class AccountsService {
   async findOneById(id: string) {
     try {
       const account = await this.accountModel.findById(id);
-      if (!account) throw new Error('Account not found');
+      if (!account) throw new BadRequestException('Account not found');
       return account;
     } catch (error) {
       if (error instanceof Error) {
@@ -45,22 +46,25 @@ export class AccountsService {
 
   async findOneByEmail(email: string) {
     try {
-      const account = await this.accountModel.findOne({ email });
-      if (!account) {
-        throw new Error('Account not found');
-      }
-      return account.save();
+      const account = await this.accountModel.findOne({ email }).lean();
+      return account;
     } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Đã xảy ra lỗi không xác định khi tìm tài khoản.');
+      throw new Error(error);
     }
   }
 
-  async findByIdAndUpdate(id: string, payload: Partial<Account>) {
+  // account.service.ts
+  async findOneByEmailForAuth(email: string) {
     try {
-      const account = await this.accountModel.findByIdAndUpdate({ _id: id }, payload);
+      return await this.accountModel.findOne({ email }).select('+password +refreshToken').lean().exec();
+    } catch (error) {
+      Error(error);
+    }
+  }
+
+  async findByIdAndUpdate(accountId: string, payload: Partial<Account>) {
+    try {
+      const account = await this.accountModel.findByIdAndUpdate({ _id: accountId }, payload);
       return account;
     } catch (error) {
       throw new Error(error);
@@ -71,6 +75,26 @@ export class AccountsService {
     try {
       await this.findByIdAndUpdate(accountId, {
         refreshToken,
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async updateLastLoginAt(accountId: string, lastLoginAt: Date): Promise<void> {
+    try {
+      await this.findByIdAndUpdate(accountId, {
+        lastLoginAt,
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async updateVerifiedStatus(accountId: string, status: AccountStatus): Promise<void> {
+    try {
+      await this.findByIdAndUpdate(accountId, {
+        status,
       });
     } catch (error) {
       throw new Error(error);

@@ -52,6 +52,7 @@
     "ioredis": "^5.8.0",
     "joi": "^18.0.1",
     "mongoose": "^8.18.2",
+    "nestjs-i18n": "^10.5.1",
     "nestjs-mailer": "^1.0.1",
     "nestjs-pino": "^4.4.1",
     "nodemailer": "^7.0.10",
