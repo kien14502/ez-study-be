@@ -49,6 +49,9 @@ export class UserService {
                 $project: {
                   password: 0,
                   refreshToken: 0,
+                  provider: 0,
+                  status: 0,
+                  deletedAt: 0,
                 },
               },
             ],
@@ -61,18 +64,10 @@ export class UserService {
           },
         },
         {
-          $replaceRoot: {
-            newRoot: {
-              $mergeObjects: ['$$ROOT', '$account'],
-            },
-          },
-        },
-        {
           $project: {
-            account: 0,
+            deletedAt: 0,
           },
         },
-
         { $limit: 1 },
       ]);
 

@@ -141,7 +141,7 @@ export class AccountsService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException('Failed to generate tokens', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

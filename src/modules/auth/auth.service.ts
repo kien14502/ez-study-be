@@ -237,6 +237,7 @@ export class AuthService {
     try {
       return await this.accountService.generateTokens(user);
     } catch (error) {
+      console.error('🚀 ~ AuthService ~ refreshTokens ~ error:', error);
       this.logger.error('Error refreshing tokens', error);
       throw new HttpException('Failed to refresh token', HttpStatus.UNAUTHORIZED);
     }
