@@ -4,8 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { Types } from 'mongoose';
+import { I18nService } from 'nestjs-i18n';
 
 import { AccountStatus } from '@/common/constants';
+import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 import { MailService } from '@/common/services/mail/mail.service';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
@@ -26,6 +28,7 @@ export class AuthService {
     private userService: UserService,
     private accountService: AccountsService,
     private readonly mailService: MailService,
+    private readonly i18n: I18nService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {
@@ -62,62 +65,59 @@ export class AuthService {
     }
   }
 
+  @WithTryCatch('Failed to register user')
   async register(registerDto: RegisterDto) {
-    try {
-      const { email, password, fullName } = registerDto;
+    const { email, password, fullName } = registerDto;
 
-      const existingAccount = await this.accountService.findOneByEmail(email);
-      if (existingAccount) {
-        throw new HttpException('Email already registered', HttpStatus.BAD_REQUEST);
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Step 1: Create Account
-      const account = await this.accountService.createAccount(email, hashedPassword);
-
-      // Step 2: Create User
-      await this.userService.createUserProfile({ accountId: account._id, fullName });
-
-      // Step 3: Generate verification token
-      const verificationToken = this.jwtService.sign(
-        {
-          email,
-          accountId: account._id.toString(),
-          type: 'email-verification',
-        },
-        {
-          secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
-          expiresIn: '24h',
-        },
-      );
-
-      const redisKey = `verify-token:${account._id.toString()}`;
-      await this.redisService.set(redisKey, verificationToken, 86400);
-
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-      this.logger.log(`Verification link for ${email}: ${verifyUrl}`);
-
-      // TODO: Send verification email here
-      // await this.mailService.sendMail({
-      //   to: email,
-      //   subject: 'Email Verification',
-      //   template: 'verification',
-      //   context: {
-      //     verifyUrl,
-      //     year: new Date().getFullYear(),
-      //   },
-      //   attachments: [],
-      // });
-
-      return {
-        message: 'Registration successful. Please check your email to verify your account.',
-      };
-    } catch (error) {
-      throw error;
+    const existingAccount = await this.accountService.findOneByEmail(email);
+    if (existingAccount) {
+      throw new HttpException(this.i18n.t('auth.register.messages.existing_account'), HttpStatus.BAD_REQUEST);
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Step 1: Create Account
+    const account = await this.accountService.createAccount(email, hashedPassword);
+
+    // Step 2: Create User
+    await this.userService.createUserProfile({ accountId: account._id, fullName });
+
+    // Step 3: Generate verification token
+    const verificationToken = this.jwtService.sign(
+      {
+        email,
+        accountId: account._id.toString(),
+        type: 'email-verification',
+      },
+      {
+        secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
+        expiresIn: '24h',
+      },
+    );
+
+    const redisKey = `verify-token:${account._id.toString()}`;
+    await this.redisService.set(redisKey, verificationToken, 86400);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    this.logger.log(`Verification link for ${email}: ${verifyUrl}`);
+
+    // TODO: Send verification email here
+    // await this.mailService.sendMail({
+    //   to: email,
+    //   subject: 'Email Verification',
+    //   template: 'verification',
+    //   context: {
+    //     verifyUrl,
+    //     year: new Date().getFullYear(),
+    //   },
+    //   attachments: [],
+    // });
+
+    return {
+      message: this.i18n.t('auth.register.messages.success'),
+    };
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string; tokens?: AuthTokens }> {
@@ -173,92 +173,81 @@ export class AuthService {
     }
   }
 
+  @WithTryCatch('Failed to resend verification code')
   async resendVerificationCode(email: string): Promise<{ message: string }> {
-    try {
-      const account = await this.accountService.findOneByEmail(email);
+    const account = await this.accountService.findOneByEmail(email);
 
-      if (!account) {
-        throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
-      }
+    if (!account) {
+      throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
+    }
 
-      if (account.status === AccountStatus.ACTIVE) {
-        throw new HttpException('Account already verified', HttpStatus.BAD_REQUEST);
-      }
+    if (account.status === AccountStatus.ACTIVE) {
+      throw new HttpException('Account already verified', HttpStatus.BAD_REQUEST);
+    }
 
-      const rateLimitKey = `resend-verify:${email}`;
-      const lastSent = await this.redisService.get(rateLimitKey);
+    const rateLimitKey = `resend-verify:${email}`;
+    const lastSent = await this.redisService.get(rateLimitKey);
 
-      if (lastSent) {
-        const ttl = await this.redisService.ttl(rateLimitKey);
-        throw new HttpException(
-          `Please wait ${Math.ceil(ttl / 60)} minutes before requesting a new verification email.`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
-
-      const oldTokenKey = `verify-token:${account._id.toString()}`;
-      await this.redisService.del(oldTokenKey);
-
-      // Generate new verification token
-      const verificationToken = this.jwtService.sign(
-        {
-          email,
-          accountId: account._id.toString(),
-          type: 'email-verification',
-        },
-        {
-          secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
-          expiresIn: '24h',
-        },
+    if (lastSent) {
+      const ttl = await this.redisService.ttl(rateLimitKey);
+      throw new HttpException(
+        `Please wait ${Math.ceil(ttl / 60)} minutes before requesting a new verification email.`,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
-
-      // Store new token in Redis
-      await this.redisService.set(oldTokenKey, verificationToken, 86400);
-
-      // Set rate limit (5 minutes)
-      await this.redisService.set(rateLimitKey, Date.now().toString(), 300);
-
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-      this.logger.log(`New verification link sent to ${email}: ${verifyUrl}`);
-
-      // TODO: Send verification email here
-
-      return {
-        message: 'Verification code sent successfully. Please check your email.',
-      };
-    } catch (error) {
-      throw error;
     }
+
+    const oldTokenKey = `verify-token:${account._id.toString()}`;
+    await this.redisService.del(oldTokenKey);
+
+    // Generate new verification token
+    const verificationToken = this.jwtService.sign(
+      {
+        email,
+        accountId: account._id.toString(),
+        type: 'email-verification',
+      },
+      {
+        secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
+        expiresIn: '24h',
+      },
+    );
+
+    // Store new token in Redis
+    await this.redisService.set(oldTokenKey, verificationToken, 86400);
+
+    // Set rate limit (5 minutes)
+    await this.redisService.set(rateLimitKey, Date.now().toString(), 300);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    this.logger.log(`New verification link sent to ${email}: ${verifyUrl}`);
+
+    // TODO: Send verification email here
+
+    return {
+      message: 'Verification code sent successfully. Please check your email.',
+    };
   }
 
+  @WithTryCatch('Failed to refresh tokens')
   async refreshTokens(user: UserJWTPayload): Promise<AuthTokens> {
-    try {
-      return await this.accountService.generateTokens(user);
-    } catch (error) {
-      console.error('🚀 ~ AuthService ~ refreshTokens ~ error:', error);
-      this.logger.error('Error refreshing tokens', error);
-      throw new HttpException('Failed to refresh token', HttpStatus.UNAUTHORIZED);
-    }
+    return await this.accountService.generateTokens(user);
   }
 
+  @WithTryCatch('Failed to logout')
   async logout(user: UserJWTPayload, res: Response): Promise<{ message: string }> {
-    try {
-      const account = await this.accountService.findOneByEmail(user.email);
+    const account = await this.accountService.findOneByEmail(user.email);
 
-      if (account) {
-        await this.accountService.updateRefreshToken(account._id.toString(), '');
-      }
-
-      res.clearCookie('refreshToken');
-      return { message: 'Logged out successfully' };
-    } catch (error) {
-      this.logger.error('Error logging out', error);
-      throw new HttpException('Logout failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (account) {
+      await this.accountService.updateRefreshToken(account._id.toString(), '');
     }
+
+    res.clearCookie('refreshToken');
+    return { message: 'Logged out successfully' };
   }
 
+  @WithTryCatch('Failed to validate user credentials')
   async validateUserCredentials(
     email: string,
     password: string,
@@ -303,14 +292,10 @@ export class AuthService {
     };
   }
 
+  @WithTryCatch('Failed to get profile')
   async getProfileUser(user: UserJWTPayload) {
-    try {
-      const accountIdObject = new Types.ObjectId(user._id);
-      const currentUser = await this.userService.findOne({ accountId: accountIdObject });
-      return currentUser;
-    } catch (error) {
-      this.logger.error('Error logging out', error);
-      throw error;
-    }
+    const accountIdObject = new Types.ObjectId(user._id);
+    const currentUser = await this.userService.findOne({ accountId: accountIdObject });
+    return currentUser;
   }
 }
