@@ -6,8 +6,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
-// import { GoogleStrategy } from './strategies/google.strategy';
-
 import { AccountsService } from '../accounts/accounts.service';
 import { Account, AccountSchema } from '../accounts/schemas/account.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';

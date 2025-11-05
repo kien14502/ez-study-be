@@ -26,49 +26,47 @@ export class UserService {
 
   @WithTryCatch('Failed to find user')
   async findOne(payload: Partial<User>) {
-    try {
-      const matchPayload = { ...payload };
-      const users = await this.userModel.aggregate([
-        { $match: matchPayload },
-        {
-          $lookup: {
-            from: MongoCollection.ACCOUNTS,
-            localField: 'accountId',
-            foreignField: '_id',
-            as: 'account',
-            pipeline: [
-              {
-                $project: {
-                  password: 0,
-                  refreshToken: 0,
-                  provider: 0,
-                  status: 0,
-                  deletedAt: 0,
-                },
+    const matchPayload = { ...payload };
+    const users = await this.userModel.aggregate([
+      { $match: matchPayload },
+      {
+        $lookup: {
+          from: MongoCollection.ACCOUNTS,
+          localField: 'accountId',
+          foreignField: '_id',
+          as: 'account',
+          pipeline: [
+            {
+              $project: {
+                password: 0,
+                refreshToken: 0,
               },
-            ],
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$account',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ['$$ROOT', '$account'],
           },
         },
-        {
-          $unwind: {
-            path: '$account',
-            preserveNullAndEmptyArrays: true,
-          },
+      },
+      {
+        $project: {
+          account: 0,
         },
-        {
-          $project: {
-            deletedAt: 0,
-          },
-        },
-        { $limit: 1 },
-      ]);
+      },
 
-      return users[0] || null;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Find user fail');
-    }
+      { $limit: 1 },
+    ]);
+
+    return users[0] || null;
   }
 }
