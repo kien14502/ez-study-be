@@ -6,7 +6,8 @@ import { Response } from 'express';
 import { Types } from 'mongoose';
 
 import { AccountStatus } from '@/common/constants';
-import { MailService } from '@/common/services/mail/mail.service';
+import { MailersService } from '@/common/services/mailers/mailers.service';
+// import { MailService } from '@/common/services/mail/mail.service';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
@@ -25,7 +26,7 @@ export class AuthService {
     private configService: ConfigService,
     private userService: UserService,
     private accountService: AccountsService,
-    private readonly mailService: MailService,
+    private mailersService: MailersService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {

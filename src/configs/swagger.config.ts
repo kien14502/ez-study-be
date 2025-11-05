@@ -11,14 +11,14 @@ const config = new DocumentBuilder()
   .addBearerAuth(
     {
       type: 'http',
-      scheme: 'bearer',
+      scheme: 'Bearer',
       bearerFormat: 'JWT',
       in: 'header',
     },
-    'access-token',
+    'accessToken',
   )
   .setLicense('Doc json', 'http://localhost:4000/api-docs-json')
-  .addServer('localhost:4000')
+  // .addServer('localhost:4000')
   .build();
 
 export const setupSwagger = (app: INestApplication) => {

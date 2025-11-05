@@ -48,6 +48,14 @@ export class User extends MongoBaseSchema {
     required: true,
   })
   role: UserRole;
+
+  @ApiProperty({ type: Number, required: false })
+  @Prop({ type: Number, default: 0, required: false })
+  star: number;
+
+  @ApiProperty({ type: Number, required: false })
+  @Prop({ type: Number, default: 0, required: false })
+  diamond: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 
-import { MailService } from '@/common/services/mail/mail.service';
+import { MailersService } from '@/common/services/mailers/mailers.service';
 
 import { AccountsService } from '../accounts/accounts.service';
 import { Account, AccountSchema } from '../accounts/schemas/account.schema';
@@ -46,7 +46,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     AuthService,
     // GoogleStrategy,
     JwtStrategy,
-    MailService,
+    MailersService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

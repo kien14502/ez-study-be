@@ -106,7 +106,7 @@ export class AuthController {
     return this.authService.logout(user, res);
   }
 
-  @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
+  // @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @ApiDefaultOkResponse({
     type: OmitType(User, ['workspaceId', 'accountId']),
     description: 'User logged in successfully',
