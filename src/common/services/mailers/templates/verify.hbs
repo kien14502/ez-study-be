@@ -17,14 +17,14 @@
             </tr>
             <tr>
               <td style="padding: 32px; color: #111827;">
-                <h2 style="font-size: 20px; margin-bottom: 16px;">Chào bạn,</h2>
+                <h2 style="font-size: 20px; margin-bottom: 16px;">Hello, {{email}}!</h2>
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
                   Cảm ơn bạn đã đăng ký tài khoản tại <strong>EZ Study</strong>.<br />
                   Để hoàn tất quá trình đăng ký, vui lòng xác minh địa chỉ email của bạn bằng cách nhấn vào nút bên dưới:
                 </p>
                 <div style="text-align: center; margin: 32px 0;">
                   <a
-                    href="{{verifyUrl}}"
+                    href='{{client_url}}/verify-email?token={{token}}'
                     style="
                       background-color: #2563eb;
                       color: #ffffff;
@@ -46,7 +46,7 @@
             </tr>
             <tr>
               <td style="background-color: #f3f4f6; text-align: center; padding: 16px; font-size: 12px; color: #9ca3af;">
-                © {{year}} EZ Study. All rights reserved.
+                © EZ Study. All rights reserved.
               </td>
             </tr>
           </table>

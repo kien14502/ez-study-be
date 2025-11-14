@@ -79,3 +79,51 @@ export enum NodeEnv {
   TEST = 'test',
   PRODUCTION = 'production',
 }
+
+export enum MissionCode {
+  LOGIN = 'login',
+  DO_1_EXERCISE = 'do_1_exercise',
+  DO_2_EXERCISES = 'do_2_exercises',
+  DO_5_EXERCISES = 'do_5_exercises',
+  DO_1_HOMEWORK = 'do_1_homework',
+  DO_2_HOMEWORKS = 'do_2_homeworks',
+  VIEW_THEORY = 'view_theory',
+  COMPLETE_ALL = 'complete_all',
+}
+
+export const MissionDefinitions = {
+  [MissionCode.LOGIN]: {
+    title: 'Đăng nhập mỗi ngày',
+    reward: { stars: 2, diamonds: 5 },
+    goal: 1,
+    category: 'login',
+  },
+  [MissionCode.DO_1_EXERCISE]: {
+    title: 'Làm 1 bài tập bất kỳ trong nhiệm vụ',
+    reward: { stars: 5, diamonds: 10 },
+    goal: 1,
+    category: 'exercise',
+  },
+  [MissionCode.DO_2_EXERCISES]: {
+    title: 'Làm 2 bài tập bất kỳ trong nhiệm vụ',
+    reward: { stars: 5, diamonds: 10 },
+    goal: 2,
+    category: 'exercise',
+  },
+  [MissionCode.DO_1_HOMEWORK]: {
+    title: 'Làm 1 bài tập về nhà môn bất kỳ',
+    reward: { stars: 2, diamonds: 5 },
+    goal: 1,
+    category: 'homework',
+  },
+  [MissionCode.VIEW_THEORY]: {
+    title: 'Xem lý thuyết một bài bất kỳ',
+    reward: { stars: 2, diamonds: 5 },
+    goal: 1,
+    category: 'theory',
+  },
+};
+
+export enum ETopicKafka {
+  REGISTER_ACCOUNT = 'email.verify',
+}

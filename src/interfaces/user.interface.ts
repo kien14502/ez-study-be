@@ -4,3 +4,8 @@ export interface UserJWTPayload {
   sub: string;
   iss: string;
 }
+
+export interface UserRegisterEmail {
+  email: string;
+  fullName: string;
+}

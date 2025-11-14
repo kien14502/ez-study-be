@@ -2,12 +2,11 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Types } from 'mongoose';
 
-import { baseSchemaOptions, MongoBaseSchema } from '@/common/bases/base.schema';
+import { MongoBaseSchema } from '@/common/bases/base.schema';
 import { MongoCollection, UserRole } from '@/common/constants';
 
 @Schema({
   collection: MongoCollection.USERS,
-  ...baseSchemaOptions,
 })
 export class User extends MongoBaseSchema {
   @ApiProperty({ description: 'Reference to Account', type: String })
@@ -45,9 +44,17 @@ export class User extends MongoBaseSchema {
     type: String,
     enum: Object.values(UserRole),
     default: UserRole.STUDENT,
-    required: true,
+    required: false,
   })
   role: UserRole;
+
+  @ApiProperty({ type: Number, required: false })
+  @Prop({ type: Number, default: 0, required: false })
+  star: number;
+
+  @ApiProperty({ type: Number, required: false })
+  @Prop({ type: Number, default: 0, required: false })
+  diamond: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -9,6 +9,7 @@ import { UserJWTPayload } from '@/interfaces/user.interface';
 import { UpdateProfileDto } from './dtos/update-user.dto';
 import { User } from './schemas/user.schema';
 import { UserService } from './users.service';
+
 @ApiTags('User')
 @ApiGlobalResponses()
 @Controller('user')

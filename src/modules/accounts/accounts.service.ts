@@ -2,6 +2,7 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
+import { compareSync, genSaltSync, hashSync } from 'bcrypt';
 import { Model } from 'mongoose';
 
 import { AccountStatus } from '@/common/constants';
@@ -21,9 +22,25 @@ export class AccountsService {
   ) {}
 
   @WithTryCatch('Failed to create account')
-  async createAccount(email: string, password: string) {
-    const account = await this.accountModel.create({ email, password });
+  async createAccountWithEmail(email: string) {
+    const account = await this.accountModel.create({ email });
     return await account.save();
+  }
+
+  @WithTryCatch('Failed to create account')
+  async createAccount(payload: Partial<Account>) {
+    const account = await this.accountModel.create(payload);
+    return await account.save();
+  }
+
+  async updateByEmail(email: string, payload: Partial<Account>) {
+    const account = await this.accountModel.findOneAndUpdate({ email }, payload, { new: true });
+    return account;
+  }
+
+  async updateAccount(payload: Partial<Account>) {
+    const account = await this.accountModel.findOneAndUpdate(payload._id, payload);
+    return account;
   }
 
   @WithTryCatch('Not found account by id')
@@ -101,5 +118,15 @@ export class AccountsService {
       refreshToken,
       expiresIn: convertTimeToSeconds(accessTokenExpiry),
     };
+  }
+
+  async checkHashPassword(password: string, hashPassword: string) {
+    return await compareSync(password, hashPassword);
+  }
+
+  getHashPassword(password: string) {
+    const salt = genSaltSync(10);
+    const hash = hashSync(password, salt);
+    return hash;
   }
 }

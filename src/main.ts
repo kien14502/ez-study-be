@@ -9,10 +9,13 @@ import { AppModule } from './app.module';
 import ConfigKey from './common/config-key';
 import { TransformInterceptor } from './common/core/transform.interceptor';
 import { corsConfig } from './configs/cors.config';
+import { kafkaConfig } from './configs/kafka.config';
 import { setupSwagger } from './configs/swagger.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
   const configService = app.get(ConfigService);
   const reflector = app.get(Reflector);
   const logger = app.get(Logger);
@@ -30,7 +33,9 @@ async function bootstrap() {
     }),
   );
   app.use(helmet());
+  kafkaConfig(app, configService);
   setupSwagger(app);
+  await app.startAllMicroservices();
   const PORT = configService.get<number>('PORT', 4000);
   await app.listen(PORT, '0.0.0.0', () => {
     logger.log(`🚀 Application running at port ${PORT}`);

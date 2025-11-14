@@ -1,20 +1,23 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { Response } from 'express';
 import { Types } from 'mongoose';
 import { I18nService } from 'nestjs-i18n';
 
 import { AccountStatus } from '@/common/constants';
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
-import { MailService } from '@/common/services/mail/mail.service';
+import { ProducerService } from '@/common/services/kafka/producer.service';
+import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
 import { AccountsService } from '../accounts/accounts.service';
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dtos/register.dto';
+import { UpdateAuthDto } from './dtos/update-auth.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { AuthTokens } from './interfaces/jwt-payload.interface';
 
@@ -27,8 +30,9 @@ export class AuthService {
     private configService: ConfigService,
     private userService: UserService,
     private accountService: AccountsService,
-    private readonly mailService: MailService,
     private readonly i18n: I18nService,
+    private readonly emailProducer: EmailProducerService,
+    private readonly producerService: ProducerService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {
@@ -67,110 +71,72 @@ export class AuthService {
 
   @WithTryCatch('Failed to register user')
   async register(registerDto: RegisterDto) {
-    const { email, password, fullName } = registerDto;
+    const { email } = registerDto;
 
     const existingAccount = await this.accountService.findOneByEmail(email);
     if (existingAccount) {
       throw new HttpException(this.i18n.t('auth.register.messages.existing_account'), HttpStatus.BAD_REQUEST);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const token = randomUUID();
+    const redisKey = `verify:${token}`;
 
-    // Step 1: Create Account
-    const account = await this.accountService.createAccount(email, hashedPassword);
-
-    // Step 2: Create User
-    await this.userService.createUserProfile({ accountId: account._id, fullName });
-
-    // Step 3: Generate verification token
-    const verificationToken = this.jwtService.sign(
-      {
-        email,
-        accountId: account._id.toString(),
-        type: 'email-verification',
-      },
-      {
-        secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
-        expiresIn: '24h',
-      },
-    );
-
-    const redisKey = `verify-token:${account._id.toString()}`;
-    await this.redisService.set(redisKey, verificationToken, 86400);
-
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-    this.logger.log(`Verification link for ${email}: ${verifyUrl}`);
-
-    // TODO: Send verification email here
-    // await this.mailService.sendMail({
-    //   to: email,
-    //   subject: 'Email Verification',
-    //   template: 'verification',
-    //   context: {
-    //     verifyUrl,
-    //     year: new Date().getFullYear(),
-    //   },
-    //   attachments: [],
-    // });
+    await this.redisService.set(redisKey, email, 10 * 60);
+    await this.emailProducer.sendVerificationEmail({ email, token });
 
     return {
       message: this.i18n.t('auth.register.messages.success'),
     };
   }
 
+  @WithTryCatch('Fail to fill data')
+  async updateAuthBeforeVerifyEmail(payload: UpdateAuthDto) {
+    const account = await this.accountService.findOneByEmail(payload.email);
+    if (!account) throw new BadRequestException('Account not found');
+
+    const hashPassword = this.accountService.getHashPassword(payload.password);
+
+    await this.accountService.updateByEmail(payload.email, {
+      password: hashPassword,
+    });
+
+    await this.userService.createUserProfile({
+      accountId: account._id,
+      fullName: payload.fullname,
+      role: payload.role,
+    });
+
+    return { message: 'Account register successfully' };
+  }
+
+  @WithTryCatch('Failed to verify email')
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string; tokens?: AuthTokens }> {
     const { token } = verifyEmailDto;
+    const redisKey = `verify:${token}`;
+    const email = await this.redisService.get(redisKey);
 
-    try {
-      const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET'),
-      });
-
-      const { email, accountId, type } = payload;
-
-      if (type !== 'email-verification') {
-        throw new HttpException('Invalid token type', HttpStatus.BAD_REQUEST);
-      }
-
-      const account = await this.accountService.findOneById(accountId);
-
-      if (!account) {
-        throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
-      }
-
-      if (account.status === AccountStatus.ACTIVE) {
-        throw new HttpException('Account already verified', HttpStatus.BAD_REQUEST);
-      }
-
-      const redisKey = `verify-token:${accountId}`;
-      const storedToken = await this.redisService.get(redisKey);
-
-      if (!storedToken || storedToken !== token) {
-        throw new HttpException('Invalid or expired verification token', HttpStatus.BAD_REQUEST);
-      }
-
-      await this.accountService.updateVerifiedStatus(accountId, AccountStatus.ACTIVE);
-
-      await this.redisService.del(redisKey);
-
-      this.logger.log(`Email verified successfully for: ${email}`);
-
-      return {
-        message: 'Email verified successfully',
-      };
-    } catch (error) {
-      if (error.name === 'JsonWebTokenError') {
-        throw new HttpException('Invalid verification token', HttpStatus.BAD_REQUEST);
-      }
-      if (error.name === 'TokenExpiredError') {
-        throw new HttpException('Verification token has expired. Please request a new one.', HttpStatus.BAD_REQUEST);
-      }
-
-      this.logger.error('Error verifying email', error);
-      throw error;
+    if (!email) {
+      throw new BadRequestException('Invalid or expired verification token');
     }
+
+    const isAccountExist = await this.accountService.findOneByEmail(email);
+
+    if (isAccountExist) {
+      if (isAccountExist.status === AccountStatus.ACTIVE) {
+        throw new HttpException('Account already verified', HttpStatus.BAD_REQUEST);
+      } else {
+        // this.accountService
+      }
+    }
+
+    await this.accountService.createAccount({
+      email,
+      status: AccountStatus.ACTIVE,
+    });
+
+    await this.redisService.del(redisKey);
+
+    return { message: `Email ${email} verified successfully!` };
   }
 
   @WithTryCatch('Failed to resend verification code')

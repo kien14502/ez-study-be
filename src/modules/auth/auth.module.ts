@@ -1,13 +1,11 @@
+import { ProducerService } from '@/common/services/kafka/producer.service';
+import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
-
-// import { GoogleStrategy } from './strategies/google.strategy';
-import { MailService } from '@/common/services/mail/mail.service';
-
 import { AccountsService } from '../accounts/accounts.service';
 import { Account, AccountSchema } from '../accounts/schemas/account.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
@@ -39,6 +37,7 @@ import { LocalStrategy } from './strategies/local.strategy';
   ],
   controllers: [AuthController],
   providers: [
+    ProducerService,
     UserService,
     AccountsService,
     LocalStrategy,
@@ -46,7 +45,8 @@ import { LocalStrategy } from './strategies/local.strategy';
     AuthService,
     // GoogleStrategy,
     JwtStrategy,
-    MailService,
+    EmailProducerService,
+
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

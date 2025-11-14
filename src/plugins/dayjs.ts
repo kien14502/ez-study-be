@@ -29,3 +29,5 @@ export const parseDate = (
   if (_value) return dayjs(_value).format(format);
   return _value;
 };
+
+export const getNow = () => dayjs();

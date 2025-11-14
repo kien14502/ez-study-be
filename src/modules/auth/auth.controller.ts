@@ -20,6 +20,7 @@ import {
 } from './dtos/auth-response.dto';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
+import { UpdateAuthDto } from './dtos/update-auth.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -35,6 +36,9 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  @ApiBody({
+    type: LoginDto,
+  })
   @ApiDefaultOkResponse({
     type: LoginResponseDto,
     description: 'User logged in successfully',
@@ -47,6 +51,10 @@ export class AuthController {
     return this.authService.login(req.user, res);
   }
 
+  @ApiDefaultOkResponse({
+    type: MessageDto,
+    description: 'User logged in successfully',
+  })
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -71,6 +79,13 @@ export class AuthController {
   @Post('resend-verification')
   async resendVerification(@Body('email') email: string) {
     return this.authService.resendVerificationCode(email);
+  }
+
+  @Public()
+  @Post('/update-auth')
+  async updateAuthBeforeVerifyEmail(@Body() payload: UpdateAuthDto) {
+    const user = await this.authService.updateAuthBeforeVerifyEmail(payload);
+    return user;
   }
 
   @ApiCookieAuth('refreshToken')
@@ -108,7 +123,7 @@ export class AuthController {
     return this.authService.logout(user, res);
   }
 
-  @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
+  // @ApiHeader({ name: 'Authorization', description: 'Bearer <access_token>' })
   @ApiDefaultOkResponse({
     type: OmitType(User, ['workspaceId', 'accountId']),
     description: 'User logged in successfully',

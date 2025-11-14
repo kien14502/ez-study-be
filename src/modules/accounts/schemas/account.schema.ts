@@ -1,13 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 
-import { baseSchemaOptions, MongoBaseSchema } from '@/common/bases/base.schema';
+import { MongoBaseSchema } from '@/common/bases/base.schema';
 import { AccountStatus, AuthProvider, MongoCollection } from '@/common/constants';
 
-@Schema({
-  collection: MongoCollection.ACCOUNTS,
-  ...baseSchemaOptions,
-})
+@Schema({ collection: MongoCollection.ACCOUNTS })
 export class Account extends MongoBaseSchema {
   @ApiProperty({ description: 'Email của tài khoản', example: 'user@example.com' })
   @Prop({
@@ -55,7 +52,7 @@ export class Account extends MongoBaseSchema {
     type: String,
     enum: Object.values(AccountStatus),
     default: AccountStatus.INACTIVE,
-    required: true,
+    required: false,
   })
   status: AccountStatus;
 
