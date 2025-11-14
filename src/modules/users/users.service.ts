@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
-import { MongoCollection } from '@/common/constants';
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 
 import { User } from './schemas/user.schema';
@@ -27,43 +26,23 @@ export class UserService {
   @WithTryCatch('Failed to find user')
   async findOne(payload: Partial<User>) {
     const matchPayload = { ...payload };
+    if (matchPayload._id) matchPayload._id = new Types.ObjectId(matchPayload._id);
+    if (matchPayload.accountId) matchPayload.accountId = new Types.ObjectId(matchPayload.accountId);
+
     const users = await this.userModel.aggregate([
       { $match: matchPayload },
       {
         $lookup: {
-          from: MongoCollection.ACCOUNTS,
+          from: 'account',
           localField: 'accountId',
           foreignField: '_id',
           as: 'account',
-          pipeline: [
-            {
-              $project: {
-                password: 0,
-                refreshToken: 0,
-              },
-            },
-          ],
+          pipeline: [{ $project: { password: 0, refreshToken: 0 } }],
         },
       },
-      {
-        $unwind: {
-          path: '$account',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$$ROOT', '$account'],
-          },
-        },
-      },
-      {
-        $project: {
-          account: 0,
-        },
-      },
-
+      { $unwind: { path: '$account', preserveNullAndEmptyArrays: true } },
+      // Keep the account info in `account` field
+      { $project: { accountId: 0 } },
       { $limit: 1 },
     ]);
 

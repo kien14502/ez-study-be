@@ -1,5 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
-import { MailersService } from '@/common/services/mailers/mailers.service';
+import { ProducerService } from '@/common/services/kafka/producer.service';
+import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -37,6 +38,7 @@ import { LocalStrategy } from './strategies/local.strategy';
   ],
   controllers: [AuthController],
   providers: [
+    ProducerService,
     UserService,
     AccountsService,
     LocalStrategy,
@@ -44,7 +46,8 @@ import { LocalStrategy } from './strategies/local.strategy';
     AuthService,
     // GoogleStrategy,
     JwtStrategy,
-    MailersService,
+    EmailProducerService,
+
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

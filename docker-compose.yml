@@ -1,7 +1,42 @@
 version: '3.8'
 
 services:
-  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      # ----------------------
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    depends_on:
+      - zookeeper
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    ports:
+      - '8080:8080'
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      # - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    depends_on:
+      - kafka
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -21,23 +56,25 @@ services:
     restart: always
     ports:
       - "6379:6379"
-  
-  app:
-    build: .
-    container_name: node_app
-    ports:
-      - "4000:4000"
-    environment:      
-      DB_URI: mongodb://mongodb:27017/ez-study
-      # DB_USER: user
-      # DB_PASS: password
-      # DB_NAME: ez-study
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    depends_on:
-      - mongodb
-      - redis
+  # app:
+  #   build: .
+  #   container_name: node_app
+  #   ports:
+  #     - "4000:4000"
+  #   environment:      
+  #     DB_URI: mongodb://mongodb:27017/ez-study
+  #     # DB_USER: user
+  #     # DB_PASS: password
+  #     # DB_NAME: ez-study
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #   depends_on:
+  #     - mongodb
+  #     - redis
 
 volumes:
   mongo_data:
     driver: local
+networks:
+  app-tier:
+    driver: bridge
