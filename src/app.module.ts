@@ -1,19 +1,16 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-
 import { MailerModule } from '@nestjs-modules/mailer';
-import { MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import ConfigKey from './common/config-key';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { MailersModule } from './common/services/mailers/mailers.module';
+import { MongoModule } from './common/services/mongo/mongo.module';
 import { RedisModule } from './common/services/redis/redis.module';
+import { ThrottleModule } from './common/services/throttle/throttle.module';
+import envSchema from './common/validation-schema';
 import { loggerConfig } from './configs/logger.config';
 import { mailerConfig } from './configs/mailer.config';
 import { I18nModule } from './i18n/i18n.module';
@@ -29,35 +26,14 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const uri = configService.get<string>(
-          ConfigKey.MONGO_DATABASE_CONNECTION_STRING,
-          'mongodb://mongodb:27017/ez-study',
-        );
-        return {
-          uri,
-        };
-      },
-    }),
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => [
-        {
-          ttl: config.get<number>('THROTTLE_TTL', 60000),
-          limit: config.get<number>('THROTTLE_LIMIT', 10),
-        },
-      ],
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env', validationSchema: envSchema }),
+    ThrottleModule,
     LoggerModule.forRoot(loggerConfig()),
     MailerModule.forRootAsync({
       useFactory: mailerConfig,
       inject: [ConfigService],
     }),
+    MongoModule,
     I18nModule,
     AuthModule,
     UsersModule,
