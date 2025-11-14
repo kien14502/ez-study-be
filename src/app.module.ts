@@ -1,8 +1,10 @@
 /* eslint-disable simple-import-sort/imports */
 import { MailerModule } from '@nestjs-modules/mailer';
-import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,7 +13,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { MailersModule } from './common/services/mailers/mailers.module';
 import { RedisModule } from './common/services/redis/redis.module';
 import { loggerConfig } from './configs/logger.config';
-import { mailerAwsConfig } from './configs/mailer-aws.config';
+import { mailerConfig } from './configs/mailer.config';
 import { I18nModule } from './i18n/i18n.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -30,20 +32,28 @@ import { UsersModule } from './modules/users/users.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        const logger = new Logger('MongooseModule');
         const uri = configService.get<string>(
           ConfigKey.MONGO_DATABASE_CONNECTION_STRING,
           'mongodb://mongodb:27017/ez-study',
         );
-        logger.log('uri', uri);
         return {
           uri,
         };
       },
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: config.get<number>('THROTTLE_TTL', 60000),
+          limit: config.get<number>('THROTTLE_LIMIT', 10),
+        },
+      ],
+    }),
     LoggerModule.forRoot(loggerConfig()),
     MailerModule.forRootAsync({
-      useFactory: mailerAwsConfig,
+      useFactory: mailerConfig,
       inject: [ConfigService],
     }),
     I18nModule,
@@ -58,6 +68,7 @@ import { UsersModule } from './modules/users/users.module';
     ExercisesModule,
     AccountsModule,
     MailersModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

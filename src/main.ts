@@ -9,6 +9,7 @@ import { AppModule } from './app.module';
 import ConfigKey from './common/config-key';
 import { TransformInterceptor } from './common/core/transform.interceptor';
 import { corsConfig } from './configs/cors.config';
+import { kafkaConfig } from './configs/kafka.config';
 import { setupSwagger } from './configs/swagger.config';
 
 async function bootstrap() {
@@ -32,7 +33,9 @@ async function bootstrap() {
     }),
   );
   app.use(helmet());
+  kafkaConfig(app, configService);
   setupSwagger(app);
+  await app.startAllMicroservices();
   const PORT = configService.get<number>('PORT', 4000);
   await app.listen(PORT, '0.0.0.0', () => {
     logger.log(`🚀 Application running at port ${PORT}`);

@@ -11,8 +11,7 @@ export class RequestIdMiddleware implements NestMiddleware {
     req['id'] = requestId;
     res.setHeader('X-Request-Id', requestId);
 
-    this.logger.log(`[${requestId}][${req.method}]`);
-    console.info('checked');
+    this.logger.log(`[${requestId}][${req.method}]` + req.url);
     next();
   }
 }
