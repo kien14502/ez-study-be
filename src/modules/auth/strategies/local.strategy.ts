@@ -13,11 +13,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     private userService: UserService,
     private authService: AuthService,
   ) {
-    super();
+    super({ usernameField: 'email' });
   }
 
-  async validate(username: string, password: string): Promise<UserJWTPayload> {
-    const user = await this.authService.validateUserCredentials(username, password);
+  async validate(email: string, password: string): Promise<UserJWTPayload> {
+    const user = await this.authService.validateUserCredentials(email, password);
     return {
       _id: user._id.toString(),
       email: user.email,

@@ -43,6 +43,7 @@ export class AuthController {
     type: LoginResponseDto,
     description: 'User logged in successfully',
   })
+  @ApiBody({ type: LoginDto })
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')

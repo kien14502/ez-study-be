@@ -4,6 +4,8 @@ import { Model, Types } from 'mongoose';
 
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 
+import { CreateUserProfileDto } from './dtos/create-user.dto';
+import { UpdateProfileDto } from './dtos/update-user.dto';
 import { User } from './schemas/user.schema';
 
 @Injectable()
@@ -12,13 +14,13 @@ export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   @WithTryCatch('Failed to update user profile')
-  async updateProfile(userId: string, updateData: Partial<User>): Promise<User | null> {
+  async updateProfile(userId: string, updateData: UpdateProfileDto): Promise<User | null> {
     const user = await this.userModel.findOneAndUpdate({ _id: userId }, updateData, { new: true }).exec();
     return user;
   }
 
   @WithTryCatch('Failed to create user profile')
-  async createUserProfile(payload: Partial<User>) {
+  async createUserProfile(payload: CreateUserProfileDto) {
     const user = await this.userModel.create(payload);
     return await user.save();
   }

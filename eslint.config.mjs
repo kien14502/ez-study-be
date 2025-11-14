@@ -1,9 +1,9 @@
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default tseslint.config(
   {
@@ -44,7 +44,7 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['error', 'warn', 'info'] }],
       'no-var': 'error',
       'no-useless-catch': 'off',
-      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/imports': 'off',
       'simple-import-sort/exports': 'warn',
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "warn",

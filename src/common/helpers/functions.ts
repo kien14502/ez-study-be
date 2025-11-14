@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { isValidObjectId, Types } from 'mongoose';
 
+import { I18nService } from 'nestjs-i18n';
 import dayjs from '../../plugins/dayjs';
 
 export function toObjectId(
@@ -23,3 +24,10 @@ export function hashPassword(password: string) {
 export function convertTimeToUTC(time: string | Date) {
   return dayjs.tz(time, 'UTC').toDate();
 }
+
+export const handlebarHelpers = (i18n: I18nService) => ({
+  t: i18n.hbsHelper,
+  eq: function (arg1, arg2) {
+    return arg1 === arg2;
+  },
+});
