@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable simple-import-sort/imports */
 
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -46,6 +44,7 @@ export class MailService {
       attachments,
     });
 
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     this.logger.log(`Email sent successfully to: ${to}`);
     return true;
   }

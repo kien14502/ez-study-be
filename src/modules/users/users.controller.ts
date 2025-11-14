@@ -24,7 +24,7 @@ export class UserController {
     type: UpdateProfileDto,
   })
   @Post('profile')
-  async updateProfile(@Body() body: Partial<User>, @CurrentUser() user: UserJWTPayload) {
+  async updateProfile(@Body() body: UpdateProfileDto, @CurrentUser() user: UserJWTPayload) {
     const updatedUser = await this.userService.updateProfile(user._id.toString(), body);
     return updatedUser;
   }

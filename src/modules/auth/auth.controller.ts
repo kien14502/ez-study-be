@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Logger, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiHeader, ApiOperation, ApiTags, OmitType } from '@nestjs/swagger';
 import type { Response as ExpressResponse } from 'express';
 import { ApiGlobalResponses } from 'src/common/decorators/api-global-responses.decorator';
 import { ApiDefaultOkResponse } from 'src/common/decorators/api-response.decorator';
@@ -18,6 +18,7 @@ import {
   ResendVerificationResponseDto,
   VerifyEmailResponseDto,
 } from './dtos/auth-response.dto';
+import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
@@ -38,6 +39,7 @@ export class AuthController {
     type: LoginResponseDto,
     description: 'User logged in successfully',
   })
+  @ApiBody({ type: LoginDto })
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
