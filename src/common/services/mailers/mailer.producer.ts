@@ -1,4 +1,5 @@
 import { Injectable, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer } from 'kafkajs';
 
 import { ETopicKafka } from '@/common/constants';
@@ -8,10 +9,10 @@ export class EmailProducerService implements OnModuleInit, OnApplicationShutdown
   private kafka: Kafka;
   private producer: Producer;
 
-  constructor() {
+  constructor(configService: ConfigService) {
     this.kafka = new Kafka({
       clientId: 'mail-service',
-      brokers: ['localhost:9092'],
+      brokers: [configService.getOrThrow<string>('BROKER_KAFKA', 'kafka:29092')],
     });
     this.producer = this.kafka.producer();
   }

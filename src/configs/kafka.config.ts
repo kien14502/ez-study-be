@@ -8,7 +8,7 @@ export const kafkaConfig = (app: INestApplication, configService: ConfigService)
     options: {
       client: {
         clientId: 'mail-service',
-        brokers: [configService.getOrThrow<string>('BROKER_KAFKA')],
+        brokers: [configService.get<string>('BROKER_KAFKA', 'kafka:29092')],
       },
       consumer: {
         groupId: 'email-consumer-group',

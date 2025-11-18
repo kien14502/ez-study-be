@@ -24,6 +24,9 @@ import { MissionsModule } from './modules/missions/missions.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { UsersModule } from './modules/users/users.module';
+import { ChatBotModule } from './modules/chat-bot/chat-bot.module';
+import { OpenaiModule } from './common/services/openai/openai.module';
+import { WorkspaceModule } from './modules/workspace/workspace.module';
 
 @Module({
   imports: [
@@ -69,6 +72,9 @@ import { UsersModule } from './modules/users/users.module';
     AccountsModule,
     MailersModule,
     ScheduleModule.forRoot(),
+    ChatBotModule,
+    OpenaiModule,
+    WorkspaceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

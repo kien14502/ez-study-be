@@ -56,22 +56,25 @@ services:
     restart: always
     ports:
       - "6379:6379"
-  # app:
-  #   build: .
-  #   container_name: node_app
-  #   ports:
-  #     - "4000:4000"
-  #   environment:      
-  #     DB_URI: mongodb://mongodb:27017/ez-study
-  #     # DB_USER: user
-  #     # DB_PASS: password
-  #     # DB_NAME: ez-study
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-
+  app:
+    build: .
+    container_name: node_app
+    ports:
+      - "4000:4000"
+    environment:      
+      DB_URI: mongodb://mongodb:27017/ez-study
+      # DB_USER: user
+      # DB_PASS: password
+      # DB_NAME: ez-study
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+      - kafka-ui
+    env_file:
+      - .env
 volumes:
   mongo_data:
     driver: local

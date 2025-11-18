@@ -32,7 +32,6 @@ import { RedisService } from './redis.service';
       },
       inject: [ConfigService],
     },
-
     RedisService,
   ],
   exports: [RedisService],

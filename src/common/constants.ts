@@ -58,6 +58,12 @@ export enum UserRole {
   STUDENT = 'student',
 }
 
+export enum MemberWorkspaceStatus {
+  PENDING = 'pending',
+  SUCCESS = 'success',
+  REJECT = 'reject',
+}
+
 export enum MongoCollection {
   USERS = 'users',
   ACCOUNTS = 'accounts',
@@ -89,6 +95,11 @@ export enum MissionCode {
   DO_2_HOMEWORKS = 'do_2_homeworks',
   VIEW_THEORY = 'view_theory',
   COMPLETE_ALL = 'complete_all',
+}
+
+export enum WorkspaceStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export const MissionDefinitions = {
@@ -126,4 +137,10 @@ export const MissionDefinitions = {
 
 export enum ETopicKafka {
   REGISTER_ACCOUNT = 'email.verify',
+}
+
+export enum MemberRoleWorkspace {
+  ADMIN = 'admin',
+  SUB_ADMIN = 'sub-admin',
+  MEMBER = 'member',
 }

@@ -9,7 +9,6 @@ import { I18nService } from 'nestjs-i18n';
 
 import { AccountStatus } from '@/common/constants';
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
-import { ProducerService } from '@/common/services/kafka/producer.service';
 import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { RedisService } from '@/common/services/redis/redis.service';
 import { UserJWTPayload } from '@/interfaces/user.interface';
@@ -32,7 +31,6 @@ export class AuthService {
     private accountService: AccountsService,
     private readonly i18n: I18nService,
     private readonly emailProducer: EmailProducerService,
-    private readonly producerService: ProducerService,
   ) {}
 
   async login(userPayload: UserJWTPayload, res: Response) {
@@ -91,6 +89,7 @@ export class AuthService {
 
   @WithTryCatch('Fail to fill data')
   async updateAuthBeforeVerifyEmail(payload: UpdateAuthDto) {
+    console.info('🚀 ~ AuthService ~ updateAuthBeforeVerifyEmail ~ payload:', payload);
     const account = await this.accountService.findOneByEmail(payload.email);
     if (!account) throw new BadRequestException('Account not found');
 

@@ -20,7 +20,7 @@ export class UserService {
   @WithTryCatch('Failed to create user profile')
   async createUserProfile(payload: Partial<User>) {
     const user = await this.userModel.create(payload);
-    return await user.save();
+    return user;
   }
 
   @WithTryCatch('Failed to find user')

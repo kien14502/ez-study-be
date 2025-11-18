@@ -60,6 +60,7 @@
     "nestjs-mailer": "^1.0.1",
     "nestjs-pino": "^4.4.1",
     "nodemailer": "^7.0.10",
+    "openai": "^6.9.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",

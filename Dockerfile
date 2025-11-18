@@ -1,5 +1,5 @@
 # Use official Node.js LTS image as the base
-FROM node:24-alpine as build
+FROM --platform=linux/amd64 node:24-alpine as build
 
 # Set working directory
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN yarn install
 COPY . .
 RUN yarn build
 
-FROM node:24-alpine as production
+FROM --platform=linux/amd64 node:24-alpine as production
 
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules

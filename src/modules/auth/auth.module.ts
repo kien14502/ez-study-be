@@ -1,5 +1,4 @@
 /* eslint-disable simple-import-sort/imports */
-import { ProducerService } from '@/common/services/kafka/producer.service';
 import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -38,7 +37,6 @@ import { LocalStrategy } from './strategies/local.strategy';
   ],
   controllers: [AuthController],
   providers: [
-    ProducerService,
     UserService,
     AccountsService,
     LocalStrategy,

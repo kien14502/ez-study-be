@@ -58,6 +58,7 @@ export class AccountsService {
 
   @WithTryCatch('Not found account for auth')
   async findOneByEmailForAuth(email: string) {
+    console.info('🚀 ~ AccountsService ~ findOneByEmailForAuth ~ email:', email);
     return await this.accountModel.findOne({ email }).select('+password +refreshToken').lean().exec();
   }
 
