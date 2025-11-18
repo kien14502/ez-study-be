@@ -38,7 +38,7 @@ export class AuthService {
       const { email } = userPayload;
       const account = await this.accountService.findOneByEmail(email);
       if (!account) {
-        throw new HttpException('Account not found', HttpStatus.NOT_FOUND);
+        throw new HttpException(this.i18n.t('auth.login.errors.account_not_found'), HttpStatus.NOT_FOUND);
       }
 
       if (account.status !== AccountStatus.ACTIVE) {

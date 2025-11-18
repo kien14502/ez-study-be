@@ -1,4 +1,3 @@
-/* eslint-disable simple-import-sort/imports */
 import { EmailProducerService } from '@/common/services/mailers/mailer.producer';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
