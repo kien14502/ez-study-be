@@ -1,9 +1,8 @@
+import { AppModule } from '@/app.module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import mongoose from 'mongoose';
 import request from 'supertest';
-
-import { AppModule } from '../../src/app.module';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
