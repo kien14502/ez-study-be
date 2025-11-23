@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup .env file
-        run: cp .env
 
       - name: Check Docker status
         run: |
@@ -62,6 +60,12 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup .env file
+        run: cp .env.example .env
+
       - name: List available images
         run: |
           echo "Available images:"
