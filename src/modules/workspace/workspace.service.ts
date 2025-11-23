@@ -6,6 +6,7 @@ import { UserJWTPayload } from '@/interfaces/user.interface';
 
 import { WithTryCatch } from '@/common/decorators/with-try-catch.decorator';
 import { CreateWorkSpaceDto } from './dtos/create-workspace.dto';
+import { GetMemberWorkspaceDto } from './dtos/get-member-workspace.dto';
 import { InviteMemberWorkspaceDto } from './dtos/invite-member-workspace.dto';
 import { WorkspaceRepository } from './workspace.repository';
 
@@ -33,5 +34,21 @@ export class WorkspaceService {
     const userIdObj = toObjectId(user._id);
     const res = await this.workspaceRepository.inviteMember(memberIdObj, wsIdObj, userIdObj);
     return res;
+  }
+
+  async findUserWorkspaces(query: GetMemberWorkspaceDto) {
+    const newWsId = toObjectId(query.wsId);
+    const wsExists = await this.workspaceRepository.findOneById(newWsId);
+    if (!wsExists) {
+      throw new Error('Workspace not found');
+    }
+
+    const exitMember = await this.workspaceRepository.getMemberInfo(wsExists._id);
+    if (!exitMember) {
+      throw new Error('Member not found in workspace');
+    }
+
+    const users = await this.workspaceRepository.findUserWorkspaces(query);
+    return users;
   }
 }

@@ -6,6 +6,7 @@ import { MemberRoleWorkspace } from '@/common/constants';
 import { toObjectId } from '@/common/helpers/functions';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
+import { GetMemberWorkspaceDto } from './dtos/get-member-workspace.dto';
 import { MemberWorkspace } from './schemas/member-workspace.schema';
 import { Workspace } from './schemas/workspace.schema';
 
@@ -64,5 +65,20 @@ export class WorkspaceRepository {
   async createNewMember(payload: Partial<MemberWorkspace>) {
     const member = await this.memberWorkspace.create(payload);
     return member;
+  }
+
+  async findUserWorkspaces({ member_name, wsId }: GetMemberWorkspaceDto) {
+    const users = await this.workspaceModel.aggregate([
+      {
+        $match: { _id: toObjectId(wsId) },
+        $lookup: {
+          from: 'MemberWorkspace',
+          localField: 'members',
+          foreignField: '_id',
+          as: 'memberWorkspaces',
+        },
+      },
+    ]);
+    return users;
   }
 }
