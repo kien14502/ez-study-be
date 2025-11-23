@@ -25,8 +25,14 @@ jobs:
 
       - name: Get Yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
         shell: bash
+        run: |
+          echo "Running 'yarn cache dir'..."
+          YARN_CACHE_DIR=$(yarn cache dir)
+          echo "Detected cache directory: $YARN_CACHE_DIR"
+      
+          # Ghi kết quả vào biến output
+          echo "dir=$YARN_CACHE_DIR" >> $GITHUB_OUTPUT
 
       - name: Cache Yarn dependencies
         uses: actions/cache@v4
