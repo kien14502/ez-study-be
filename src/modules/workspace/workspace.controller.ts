@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { UserRole } from '@/common/constants';
@@ -9,6 +9,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { UserJWTPayload } from '@/interfaces/user.interface';
 
 import { CreateWorkSpaceDto } from './dtos/create-workspace.dto';
+import { GetMemberWorkspaceDto } from './dtos/get-member-workspace.dto';
 import { InviteMemberWorkspaceDto } from './dtos/invite-member-workspace.dto';
 import { Workspace } from './schemas/workspace.schema';
 import { WorkspaceService } from './workspace.service';
@@ -36,5 +37,10 @@ export class WorkspaceController {
   @Post('invite-member')
   async inviteMember(@Body() payload: InviteMemberWorkspaceDto, @CurrentUser() user: UserJWTPayload) {
     return await this.workspaceService.inviteMember(payload, user);
+  }
+
+  @Get('/member/:name')
+  async findUserWorkspaces(@Query() query: GetMemberWorkspaceDto) {
+    return await this.workspaceService.findUserWorkspaces(query);
   }
 }

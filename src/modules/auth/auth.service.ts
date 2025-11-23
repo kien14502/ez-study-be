@@ -109,7 +109,7 @@ export class AuthService {
   }
 
   @WithTryCatch('Failed to verify email')
-  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string; tokens?: AuthTokens }> {
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ message: string; email: string }> {
     const { token } = verifyEmailDto;
     const redisKey = `verify:${token}`;
     const email = await this.redisService.get(redisKey);
@@ -135,7 +135,7 @@ export class AuthService {
 
     await this.redisService.del(redisKey);
 
-    return { message: `Email ${email} verified successfully!` };
+    return { message: `Email ${email} verified successfully!`, email: email };
   }
 
   @WithTryCatch('Failed to resend verification code')

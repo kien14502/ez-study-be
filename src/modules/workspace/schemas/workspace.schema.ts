@@ -5,7 +5,7 @@ import { Types } from 'mongoose';
 import { MongoBaseSchema } from '@/common/bases/base.schema';
 import { MongoCollection, WorkspaceStatus } from '@/common/constants';
 
-@Schema({ collection: 'Workspaces' })
+@Schema({ collection: MongoCollection.WORKSPACES })
 export class Workspace extends MongoBaseSchema {
   @ApiProperty({ example: 'Nguyễn Văn A' })
   @Prop({ required: true, trim: true, type: String })

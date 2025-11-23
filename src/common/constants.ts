@@ -68,6 +68,7 @@ export enum MongoCollection {
   USERS = 'users',
   ACCOUNTS = 'accounts',
   WORKSPACES = 'workspaces',
+  MEMBER_WORKSPACE = 'MemberWorkspace',
 }
 
 export enum AuthProvider {
