@@ -9,7 +9,7 @@ on:
 env:
   NODE_VERSION: '24' 
   IMAGE_NAME: node-app
-  CONTAINER_NAME: node-app-container
+  CONTAINER_NAME: ez-study-be-app
   APP_PORT: 4000
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-files-${{ needs.build-and-lint.outputs.short_sha || 'latest' }}
+          name: build-files
       
       - name: Build Docker image
         run: |
