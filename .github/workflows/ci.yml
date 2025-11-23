@@ -7,7 +7,10 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: '24'
+  NODE_VERSION: '24' 
+  IMAGE_NAME: node-app
+  CONTAINER_NAME: node-app-container
+  APP_PORT: 4000
 
 jobs:
   build-and-lint:
@@ -66,3 +69,114 @@ jobs:
             package.json
             yarn.lock
           retention-days: 7
+
+  deploy:
+    name: Deploy Docker
+    needs: build-and-lint
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ needs.build-and-lint.outputs.short_sha || 'latest' }}
+      
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --build-arg VERSION=${{ needs.build.outputs.short_sha }} \
+            -t ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.short_sha }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            .
+      - name: Stop old container
+        run: |
+          if [ $(docker ps -q -f name=${{ env.CONTAINER_NAME }}) ]; then
+            echo "Stopping old container..."
+            docker stop ${{ env.CONTAINER_NAME }}
+            docker rm ${{ env.CONTAINER_NAME }}
+          else
+            echo "No running container found"
+          fi
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.APP_PORT }}:4000 \
+            -e NODE_ENV=production \
+            --restart unless-stopped \
+            --health-cmd="curl -f http://localhost:4000/health || exit 1" \
+            --health-interval=30s \
+            --health-timeout=10s \
+            --health-retries=3 \
+            ${{ env.IMAGE_NAME }}:latest
+      - name: Wait for container to be healthy
+        run: |
+          echo "Waiting for container to be healthy..."
+          timeout 120 bash -c '
+            while true; do
+              STATUS=$(docker inspect --format="{{.State.Health.Status}}" ${{ env.CONTAINER_NAME }} 2>/dev/null || echo "starting")
+              echo "Container health status: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "✅ Container is healthy!"
+                exit 0
+              fi
+              sleep 5
+            done
+          ' || echo "⚠️ Health check timeout, but container is running"
+      - name: Show container logs
+        if: always()
+        run: |
+          echo "=== Container Logs ==="
+          docker logs ${{ env.CONTAINER_NAME }} --tail 50
+      - name: Show container info
+        run: |
+          echo "=== Container Status ==="
+          docker ps -f name=${{ env.CONTAINER_NAME }}
+          
+          echo ""
+          echo "=== Container Details ==="
+          docker inspect ${{ env.CONTAINER_NAME }} --format='
+          Container: {{.Name}}
+          Status: {{.State.Status}}
+          Health: {{.State.Health.Status}}
+          Image: {{.Config.Image}}
+          Started: {{.State.StartedAt}}
+      - name: Cleanup old images
+        run: |
+          echo "Cleaning up old images..."
+          docker image prune -af --filter "until=24h"
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: \`${{ needs.build.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container**: \`${{ env.CONTAINER_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Port**: \`${{ env.APP_PORT }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: http://localhost:${{ env.APP_PORT }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          docker ps -f name=${{ env.CONTAINER_NAME }} --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  rollback:
+    name: Rollback (Manual)
+    runs-on: self-hosted
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: List available images
+        run: |
+          echo "Available images:"
+          docker images ${{ env.IMAGE_NAME }} --format "table {{.Tag}}\t{{.CreatedAt}}\t{{.Size}}"
+
+      - name: Rollback instructions
+        run: |
+          echo "To rollback manually, run:"
+          echo "docker stop ${{ env.CONTAINER_NAME }}"
+          echo "docker rm ${{ env.CONTAINER_NAME }}"
+          echo "docker run -d --name ${{ env.CONTAINER_NAME }} -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} ${{ env.IMAGE_NAME }}:<TAG>"
