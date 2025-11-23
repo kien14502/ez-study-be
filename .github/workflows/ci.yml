@@ -22,25 +22,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack (for Yarn)
-        run: corepack enable
-
-      - name: Install Yarn
-        run: corepack prepare yarn@stable --activate
-
-      - name: Verify Yarn installation
-        run: yarn --version
 
       - name: Get Yarn cache directory path
         id: yarn-cache-dir-path
         shell: bash
         run: |
-          echo "Running 'yarn cache dir'..."
-          YARN_CACHE_DIR=$(yarn cache dir)
+          YARN_CACHE_DIR=$(yarn config get cacheFolder)
+          if [ -z "$YARN_CACHE_DIR" ]; then
+          YARN_CACHE_DIR="$HOME/.yarn/cache"
+          fi
           echo "Detected cache directory: $YARN_CACHE_DIR"
-      
-          # Ghi kết quả vào biến output
           echo "dir=$YARN_CACHE_DIR" >> $GITHUB_OUTPUT
 
       - name: Cache Yarn dependencies
