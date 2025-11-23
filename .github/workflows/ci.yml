@@ -7,69 +7,55 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: '24' 
-  IMAGE_NAME: node-app
-  CONTAINER_NAME: ez-study-be-app
-  APP_PORT: 4000
+  NODE_VERSION: '20'
 
 jobs:
   build-and-lint:
     name: Build & Lint
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup .env file
-        run: cp .env
 
-      - name: Check Docker status
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get Yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run ESLint check
         run: |
-          sudo systemctl status docker || sudo systemctl start docker
-          docker --version
-          docker compose version
+          yarn eslint "src/**/*.ts"
+          yarn eslint "test/**/*.ts" --parser-options='{"project": null}'
 
-      - name: Stop old containers
-        run: |
-          sudo docker compose -f docker-compose.prod.yml down || true
+      - name: Check Prettier formatting
+        run: yarn prettier --check "src/**/*.ts" "test/**/*.ts"
 
-      - name: Build and start containers
-        run: |
-          sudo docker compose -f docker-compose.prod.yml up -d --build
+      - name: Build application
+        run: yarn build
 
-      - name: Wait for containers to be ready
-        run: |
-          echo "Waiting for containers..."
-          sleep 10
-
-      - name: Check running containers
-        run: |
-          sudo docker compose -f docker-compose.prod.yml ps
-
-      - name: Show logs
-        if: always()
-        run: |
-          sudo docker compose -f docker-compose.prod.yml logs --tail=50
-
-      - name: Cleanup old images
-        run: |
-          docker image prune -af --filter "until=24h"
-
-      
-
-  rollback:
-    name: Rollback (Manual)
-    runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch'
-    
-    steps:
-      - name: List available images
-        run: |
-          echo "Available images:"
-          docker images ${{ env.IMAGE_NAME }} --format "table {{.Tag}}\t{{.CreatedAt}}\t{{.Size}}"
-
-      - name: Rollback instructions
-        run: |
-          echo "To rollback manually, run:"
-          echo "docker stop ${{ env.CONTAINER_NAME }}"
-          echo "docker rm ${{ env.CONTAINER_NAME }}"
-          echo "docker run -d --name ${{ env.CONTAINER_NAME }} -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} ${{ env.IMAGE_NAME }}:<TAG>"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: |
+            dist/
+            package.json
+            yarn.lock
+          retention-days: 7
