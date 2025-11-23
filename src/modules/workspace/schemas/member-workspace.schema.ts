@@ -26,11 +26,11 @@ export class MemberWorkspace extends MongoBaseSchema {
   invitedBy: Types.ObjectId;
 
   @ApiProperty({ enum: MemberWorkspaceStatus })
-  @Prop({ enum: MemberWorkspaceStatus, required: false, default: MemberWorkspaceStatus.PENDING })
+  @Prop({ type: String, enum: MemberWorkspaceStatus, required: false, default: MemberWorkspaceStatus.PENDING })
   status: MemberWorkspaceStatus;
 
   @ApiProperty({ enum: MemberRoleWorkspace })
-  @Prop({ enum: MemberRoleWorkspace, required: false, default: MemberRoleWorkspace.MEMBER })
+  @Prop({ type: String, enum: MemberRoleWorkspace, required: false, default: MemberRoleWorkspace.MEMBER })
   role: MemberRoleWorkspace;
 }
 

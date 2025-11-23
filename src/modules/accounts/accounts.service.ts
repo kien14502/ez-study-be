@@ -33,11 +33,13 @@ export class AccountsService {
     return await account.save();
   }
 
+  @WithTryCatch('Failed to update account')
   async updateByEmail(email: string, payload: Partial<Account>) {
     const account = await this.accountModel.findOneAndUpdate({ email }, payload, { new: true });
     return account;
   }
 
+  @WithTryCatch('Failed to update account')
   async updateAccount(payload: Partial<Account>) {
     const account = await this.accountModel.findOneAndUpdate(payload._id, payload);
     return account;

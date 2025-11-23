@@ -2,11 +2,35 @@
   "moduleFileExtensions": ["js", "json", "ts", "node"],
   "rootDir": "..",
   "testEnvironment": "node",
+  "globalSetup": "<rootDir>/test/e2e/global-setup.ts",
+  "globalTeardown": "<rootDir>/test/e2e/global-teardown.ts",
+  "testSequencer": "<rootDir>/test/e2e/test-sequencer.ts",
   "testRegex": ".e2e-spec.ts$",
+  "testTimeout": 300000,
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/tsconfig.jest.json"
+      }
+    ]
   },
+  "collectCoverage": false,
+  "collectCoverageFrom": ["<rootDir>/src/modules/**/*.(t|j)s"],
+  "coveragePathIgnorePatterns": [
+    "node_modules",
+    "test-config",
+    "interfaces",
+    "jestGlobalMocks.ts",
+    ".module.ts",
+    ".spec.ts",
+    ".mock.ts",
+    "model"
+  ],
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/src/$1"
-  }
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^openai$": "<rootDir>/test/e2e/mock/jest.mock.openai.ts"
+  },
+  "transformIgnorePatterns": ["/node_modules/(?!(uuid|openai)).+\\.js$"]
 }
