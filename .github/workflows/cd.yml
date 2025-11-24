@@ -6,8 +6,6 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ez-study-be-app
-  CONTAINER_NAME: node_app
   COMPOSE_FILE: docker-compose.prod.yml
 
 jobs:
@@ -18,28 +16,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Build new Docker Image
+      - name: Deploy with Docker Compose
         run: |
-          docker builder prune -af
-          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.IMAGE_NAME }}
+          docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
 
-      - name: Deploy and update services
+      - name: Show deployment status
         run: |
-          echo "Starting full deployment using Docker Compose..."
+          docker compose -f ${{ env.COMPOSE_FILE }} ps
+          docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
 
-          if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
-            echo "Stopping and removing old container: ${{ env.CONTAINER_NAME }}"
-            docker stop ${{ env.CONTAINER_NAME }} || true
-            docker rm ${{ env.CONTAINER_NAME }} || true
-          else
-            echo "Container ${{ env.CONTAINER_NAME }} does not exist yet."
-          fi
-
-          docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate --remove-orphans
-
-          echo "Deployment successful. Checking services status..."
-
-          docker ps
-
-      - name: Clean up unused Docker images
-        run: docker image prune -f
+      - name: Cleanup
+        run: docker system prune -af --volumes
