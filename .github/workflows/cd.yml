@@ -69,6 +69,10 @@ jobs:
           KAFKAJS_NO_PARTITIONER_WARNING=${{ secrets.KAFKAJS_NO_PARTITIONER_WARNING }}
           BROKER_KAFKA=${{ secrets.BROKER_KAFKA }}
 
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+
+          MONGO_DATABASE_CONNECTION_STRING=${{ secrets.MONGO_DATABASE_CONNECTION_STRING }}
+
           EOF
 
           echo "✅ .env file created from GitHub Secrets"
