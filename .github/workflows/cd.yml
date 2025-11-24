@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   COMPOSE_FILE: docker-compose.prod.yml
+  secrets-file: .env.prod
 
 jobs:
   docker-build-and-deploy:
@@ -15,6 +17,24 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Verify secrets are available
+        run: |
+          echo "🔍 Verifying GitHub Secrets..."
+          
+          MISSING_SECRETS=""
+          
+          # Check each required secret
+          [ -z "${{ secrets.PORT }}" ] && MISSING_SECRETS="$MISSING_SECRETS PORT"
+          if [ ! -z "$MISSING_SECRETS" ]; then
+            echo "❌ Missing required secrets:$MISSING_SECRETS"
+            echo ""
+            echo "Please add these secrets in GitHub:"
+            echo "Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured"
 
       - name: Create .env file from GitHub Secrets
         run: |
