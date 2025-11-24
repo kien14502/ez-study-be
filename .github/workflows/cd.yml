@@ -1,0 +1,45 @@
+name: CD — Docker Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: app
+  CONTAINER_NAME: node_app
+  COMPOSE_FILE: docker-compose.prod.yml
+
+jobs:
+  docker-build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Build new Docker Image
+        run: |
+          docker builder prune -af
+          docker compose -f ${{ env.COMPOSE_FILE }} build ${{ env.IMAGE_NAME }}
+
+      - name: Deploy and update services
+        run: |
+          echo "Starting full deployment using Docker Compose..."
+
+          if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
+            echo "Stopping and removing old container: ${{ env.CONTAINER_NAME }}"
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+          else
+            echo "Container ${{ env.CONTAINER_NAME }} does not exist yet."
+          fi
+
+          docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate --remove-orphans
+
+          echo "Deployment successful. Checking services status..."
+
+          docker ps
+
+      - name: Clean up unused Docker images
+        run: docker image prune -f
