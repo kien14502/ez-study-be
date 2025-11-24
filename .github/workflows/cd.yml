@@ -16,15 +16,77 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Create .env file from GitHub Secrets
+        run: |
+          cat > .env << EOF
+          # App Configuration
+          NODE_ENV=production
+          PORT=${{ secrets.PORT }}
+
+          # JWT Configuration
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+
+          # Email Configuration
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+
+          # AWS Configuration (if you use S3 for file uploads)
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
+
+          # Other API Keys
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+
+          # Payment Gateway (if needed)
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          EOF
+
+          echo "✅ .env file created from GitHub Secrets"
+
       - name: Deploy with Docker Compose
         run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "⏳ Waiting for services to be healthy..."
+          timeout 120 sh -c 'until docker compose -f ${{ env.COMPOSE_FILE }} ps | grep -q "healthy"; do sleep 2; done' || echo "⚠️  Warning: Some services may not be healthy yet"
 
       - name: Show deployment status
         run: |
+          echo "=== 📊 Services Status ==="
           docker compose -f ${{ env.COMPOSE_FILE }} ps
+          echo ""
+          echo "=== 📝 App Logs (last 50 lines) ==="
           docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
 
       - name: Cleanup
-        run: docker system prune -af --volumes
+        run: |
+          echo "🧹 Cleaning up unused Docker resources..."
+          docker image prune -af
+          docker network prune -f
+          rm -f .env
+          echo "✅ Cleanup completed"
+      - name: Deployment Summary
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ ========================================="
+            echo "✅  Deployment Successful!"
+            echo "✅ ========================================="
+            echo "📍 App is running at: http://localhost:4000"
+            echo "📍 Kafka UI: http://localhost:8080"
+          else
+            echo "❌ ========================================="
+            echo "❌  Deployment Failed!"
+            echo "❌ ========================================="
+            echo "📋 Check logs above for details"
+          fi
