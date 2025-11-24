@@ -13,6 +13,7 @@ env:
 jobs:
   docker-build-and-deploy:
     runs-on: self-hosted
+    environment: production
 
     steps:
       - name: Checkout source
@@ -21,9 +22,9 @@ jobs:
       - name: Verify secrets are available
         run: |
           echo "🔍 Verifying GitHub Secrets..."
-          
+
           MISSING_SECRETS=""
-          
+
           # Check each required secret
           [ -z "${{ secrets.PORT }}" ] && MISSING_SECRETS="$MISSING_SECRETS PORT"
           if [ ! -z "$MISSING_SECRETS" ]; then
@@ -33,7 +34,7 @@ jobs:
             echo "Settings → Secrets and variables → Actions → New repository secret"
             exit 1
           fi
-          
+
           echo "✅ All required secrets are configured"
 
       - name: Create .env file from GitHub Secrets
