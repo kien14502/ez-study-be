@@ -10,7 +10,7 @@ export class OpenaiService implements OnModuleInit {
 
   constructor(private configService: ConfigService) {
     this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPEN_AI_KEY'),
+      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
       // baseURL: this.configService.get<string>('OPEN_AI_ENDPOINT'),
     });
   }
