@@ -13,6 +13,7 @@ env:
 jobs:
   docker-build-and-deploy:
     runs-on: self-hosted
+    environment: product
 
     steps:
       - name: Checkout source
@@ -26,6 +27,7 @@ jobs:
           
           # Check each required secret
           [ -z "${{ secrets.PORT }}" ] && MISSING_SECRETS="$MISSING_SECRETS PORT"
+
           if [ ! -z "$MISSING_SECRETS" ]; then
             echo "❌ Missing required secrets:$MISSING_SECRETS"
             echo ""
