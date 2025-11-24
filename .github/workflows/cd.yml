@@ -1,0 +1,51 @@
+name: CD — Docker Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: app
+  CONTAINER_NAME: node_app
+  COMPOSE_FILE: docker-compose.yml
+
+jobs:
+  docker-build-and-deploy:
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build new Docker Image
+        run: docker-compose -f ${{ env.COMPOSE_FILE }} build ${{ env.IMAGE_NAME }}
+
+      - name: Deploy and update services
+        run: |
+          echo "Starting full deployment using Docker Compose..."
+
+          # 1. Dừng và xóa container ứng dụng NestJS cũ
+          # Sử dụng 'docker stop' và 'docker rm' cho container chính để đảm bảo
+          # container ứng dụng cũ (node_app) được dọn dẹp sạch sẽ.
+          if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
+            echo "Stopping and removing old container: ${{ env.CONTAINER_NAME }}"
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+          else
+            echo "Container ${{ env.CONTAINER_NAME }} does not exist yet."
+          fi
+
+          # 2. Triển khai các dịch vụ
+          # 'up -d' chạy trong chế độ detached
+          # '--remove-orphans' xóa các container không còn được định nghĩa trong file compose
+          # '--force-recreate' đảm bảo container 'app' được tạo lại từ image mới
+          docker-compose -f ${{ env.COMPOSE_FILE }} up -d --force-recreate --remove-orphans
+
+          echo "Deployment successful. Checking services status..."
+
+          # 3. Hiển thị trạng thái các container (Tùy chọn)
+          docker ps
+
+      - name: Clean up unused Docker images
+        run: docker image prune -f
