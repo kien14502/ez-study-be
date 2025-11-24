@@ -13,7 +13,7 @@ env:
 jobs:
   docker-build-and-deploy:
     runs-on: self-hosted
-    environment: produc
+    environment: product
 
     steps:
       - name: Checkout source
