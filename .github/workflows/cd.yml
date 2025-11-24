@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: app
+  IMAGE_NAME: ez-study-be-app
   CONTAINER_NAME: node_app
   COMPOSE_FILE: docker-compose.prod.yml
 
