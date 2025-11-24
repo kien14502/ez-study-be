@@ -22,30 +22,29 @@ jobs:
           # App Configuration
           NODE_ENV=production
           PORT=${{ secrets.PORT }}
+          APP_GLOBAL_PREFIX=${{ secrets.APP_GLOBAL_PREFIX }}
+          CORS_WHITELIST=${{ secrets.CORS_WHITELIST }}
+
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
 
           # JWT Configuration
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          JWT_ACCESS_TOKEN_EXPIRY=${{ secrets.JWT_ACCESS_TOKEN_EXPIRY }}
+          JWT_REFRESH_TOKEN_EXPIRY=${{ secrets.JWT_REFRESH_TOKEN_EXPIRY }}
 
           # Email Configuration
-          SMTP_HOST=${{ secrets.SMTP_HOST }}
-          SMTP_PORT=${{ secrets.SMTP_PORT }}
-          SMTP_USER=${{ secrets.SMTP_USER }}
-          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_HOST=${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT=${{ secrets.EMAIL_PORT }}
+          CLIENT_URL=${{ secrets.CLIENT_URL }}
+          THROTTLE_TTL=${{ secrets.THROTTLE_TTL }}
+          THROTTLE_LIMIT=${{ secrets.THROTTLE_LIMIT }}
 
-          # AWS Configuration (if you use S3 for file uploads)
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION=${{ secrets.AWS_REGION }}
-          AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
 
-          # Other API Keys
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
 
-          # Payment Gateway (if needed)
-          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
           EOF
 
           echo "✅ .env file created from GitHub Secrets"
