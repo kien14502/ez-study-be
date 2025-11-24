@@ -8,12 +8,11 @@ on:
 
 env:
   COMPOSE_FILE: docker-compose.prod.yml
-  secrets-file: .env.prod
 
 jobs:
   docker-build-and-deploy:
     runs-on: self-hosted
-    environment: produc
+    environment: product
 
     steps:
       - name: Checkout source
