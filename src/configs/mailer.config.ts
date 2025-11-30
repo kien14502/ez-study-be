@@ -1,5 +1,5 @@
-import { ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 
 export const mailerConfig = async (configService: ConfigService) => {
@@ -16,7 +16,9 @@ export const mailerConfig = async (configService: ConfigService) => {
     throw new Error('Missing EMAIL_USER or EMAIL_PASS for SMTP transport');
   }
 
-  const templatesDir = join(process.cwd(), 'src', 'common', 'services', 'mailers', 'templates');
+  const isProd = configService.get<string>('NODE_ENV', 'development') === 'production';
+
+  const templatesDir = join(process.cwd(), `${isProd ? 'dist' : 'src'}`, 'common', 'services', 'mailers', 'templates');
 
   return {
     transport: {

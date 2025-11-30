@@ -82,10 +82,9 @@ jobs:
           docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
 
-      - name: Wait for services to be healthy
+      - name: Remove .env
         run: |
-          echo "⏳ Waiting for services to be healthy..."
-          timeout 120 sh -c 'until docker compose -f ${{ env.COMPOSE_FILE }} ps | grep -q "healthy"; do sleep 2; done' || echo "⚠️  Warning: Some services may not be healthy yet"
+          rm -f .env
 
       - name: Show deployment status
         run: |
