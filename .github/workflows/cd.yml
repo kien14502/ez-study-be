@@ -18,25 +18,25 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Verify secrets are available
+      - name: Verify secrets
         run: |
-          echo "🔍 Verifying GitHub Secrets..."
+          echo "Verifying GitHub Secrets..."
 
           MISSING_SECRETS=""
 
           # Check each required secret
           [ -z "${{ secrets.PORT }}" ] && MISSING_SECRETS="$MISSING_SECRETS PORT"
           if [ ! -z "$MISSING_SECRETS" ]; then
-            echo "❌ Missing required secrets:$MISSING_SECRETS"
+            echo "Missing required secrets:$MISSING_SECRETS"
             echo ""
             echo "Please add these secrets in GitHub:"
             echo "Settings → Secrets and variables → Actions → New repository secret"
             exit 1
           fi
 
-          echo "✅ All required secrets are configured"
+          echo "All required secrets are configured"
 
-      - name: Create .env file from GitHub Secrets
+      - name: Create .env
         run: |
           cat > .env << EOF
           # App Configuration
@@ -75,43 +75,36 @@ jobs:
 
           EOF
 
-          echo "✅ .env file created from GitHub Secrets"
+          echo ".env file created from GitHub Secrets"
 
       - name: Deploy with Docker Compose
         run: |
           docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
 
+      - name: Status
+        run: |
+          echo "=== Services Status ==="
+          docker compose -f ${{ env.COMPOSE_FILE }} ps
+          echo ""
+          echo "=== App Logs (last 50 lines) ==="
+          docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
+
       - name: Remove .env
         run: |
           rm -f .env
-
-      - name: Show deployment status
-        run: |
-          echo "=== 📊 Services Status ==="
-          docker compose -f ${{ env.COMPOSE_FILE }} ps
-          echo ""
-          echo "=== 📝 App Logs (last 50 lines) ==="
-          docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
 
       - name: Cleanup
         run: |
           echo "🧹 Cleaning up unused Docker resources..."
           docker image prune -af
           docker network prune -f
-          echo "✅ Cleanup completed"
-      - name: Deployment Summary
+          echo "Cleanup completed"
+      - name: Summary
         if: always()
         run: |
           if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ ========================================="
-            echo "✅  Deployment Successful!"
-            echo "✅ ========================================="
-            echo "📍 App is running at: http://localhost:4000"
-            echo "📍 Kafka UI: http://localhost:8080"
+            echo " Deployment Successful!"
           else
-            echo "❌ ========================================="
-            echo "❌  Deployment Failed!"
-            echo "❌ ========================================="
-            echo "📋 Check logs above for details"
+            echo " Deployment Failed!"
           fi
