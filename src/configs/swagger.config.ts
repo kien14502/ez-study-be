@@ -18,7 +18,8 @@ const config = new DocumentBuilder()
     'accessToken',
   )
   .setLicense('Doc json', 'http://localhost:4000/api-docs-json')
-  // .addServer('localhost:4000')
+  .addServer('http://192.168.1.100:4000', 'Local Network Server')
+  .addServer('http://localhost:4000', 'Localhost Server')
   .build();
 
 export const setupSwagger = (app: INestApplication) => {
@@ -28,7 +29,7 @@ export const setupSwagger = (app: INestApplication) => {
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
-      jsonDocumentUrl: 'api-docs-json',
+      jsonDocumentUrl: '/api-docs-json',
       useRequestParameters: true,
     },
     customCssUrl: '/swagger-ui.css', // Relative path
