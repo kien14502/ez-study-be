@@ -31,5 +31,8 @@ export const setupSwagger = (app: INestApplication) => {
       jsonDocumentUrl: 'api-docs-json',
       useRequestParameters: true,
     },
+    customCssUrl: '/swagger-ui.css', // Relative path
+    customJs: '/swagger-ui-bundle.js',
+    customfavIcon: '/favicon.ico',
   });
 };
