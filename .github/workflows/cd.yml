@@ -82,9 +82,9 @@ jobs:
           docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
 
-      - name: Remove .env
-        run: |
-          rm -f .env
+      # - name: Remove .env
+      #   run: |
+      #     rm -f .env
 
       - name: Show deployment status
         run: |
