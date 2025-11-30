@@ -19,6 +19,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const reflector = app.get(Reflector);
   const logger = app.get(Logger);
+
   app.useLogger(logger);
   app.enableCors(corsConfig(configService));
   const appGlobalPrefix = configService.get(ConfigKey.APP_GLOBAL_PREFIX, '/api');
@@ -32,7 +33,13 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+    }),
+  );
   kafkaConfig(app, configService);
   setupSwagger(app);
   await app.startAllMicroservices();
