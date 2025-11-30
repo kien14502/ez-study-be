@@ -90,9 +90,9 @@ jobs:
           echo "=== App Logs (last 50 lines) ==="
           docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
 
-      - name: Remove .env
-        run: |
-          rm -f .env
+      # - name: Remove .env
+      #   run: |
+      #     rm -f .env
 
       - name: Cleanup
         run: |
