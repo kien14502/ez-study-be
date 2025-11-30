@@ -82,10 +82,6 @@ jobs:
           docker compose -f ${{ env.COMPOSE_FILE }} down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} up -d --build --force-recreate
 
-      - name: Remove .env
-        run: |
-          rm -f .env
-
       - name: Show deployment status
         run: |
           echo "=== 📊 Services Status ==="
@@ -93,6 +89,10 @@ jobs:
           echo ""
           echo "=== 📝 App Logs (last 50 lines) ==="
           docker compose -f ${{ env.COMPOSE_FILE }} logs --tail=50 app
+
+      - name: Remove .env
+        run: |
+          rm -f .env
 
       - name: Cleanup
         run: |
