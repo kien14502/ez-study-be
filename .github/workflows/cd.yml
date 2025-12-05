@@ -26,6 +26,7 @@ jobs:
 
           # Check each required secret
           [ -z "${{ secrets.PORT }}" ] && MISSING_SECRETS="$MISSING_SECRETS PORT"
+
           if [ ! -z "$MISSING_SECRETS" ]; then
             echo "Missing required secrets:$MISSING_SECRETS"
             echo ""
